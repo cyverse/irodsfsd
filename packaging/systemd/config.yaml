@@ -1,0 +1,27 @@
+# irodsfsd accepts this YAML format and the equivalent JSON object.
+api_service_port: 13021
+irodsfs_binary: /usr/local/bin/irodsfs
+data_dir: /var/lib/irodsfsd
+runtime_dir: /run/irodsfsd
+mount_root: /var/lib/irodsfsd/mounts
+pid_file: /run/irodsfsd/irodsfsd.pid
+daemon_log_file: /var/log/irodsfsd/irodsfsd.log
+working_directory: /var/lib/irodsfsd
+
+allowed_mount_roots:
+  - /mnt/irods
+  - /var/lib/kubelet
+
+retry:
+  max_attempts: 5
+  initial_delay: 1s
+  max_delay: 30s
+  multiplier: 2
+  jitter: 0.2
+
+mount_timeout: 30s
+unmount_timeout: 15s
+shutdown_grace_period: 20s
+reconcile_interval: 10s
+max_concurrent_mounts: 4
+restore_on_start: true

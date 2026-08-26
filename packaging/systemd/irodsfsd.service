@@ -1,0 +1,34 @@
+[Unit]
+Description=iRODS FUSE mount management daemon
+Documentation=https://github.com/cyverse/irodsfsd
+Wants=network-online.target
+After=network-online.target nss-lookup.target
+
+[Service]
+Type=forking
+User=irodsfsd
+Group=irodsfsd
+
+EnvironmentFile=/etc/irodsfsd/irodsfsd.conf
+
+RuntimeDirectory=irodsfsd
+RuntimeDirectoryMode=0750
+StateDirectory=irodsfsd
+StateDirectoryMode=0750
+LogsDirectory=irodsfsd
+LogsDirectoryMode=0750
+
+PIDFile=/run/irodsfsd/irodsfsd.pid
+ExecStart=/usr/bin/irodsfsd --config ${IRODSFSD_CONFIG} start
+ExecStop=/usr/bin/irodsfsd --config ${IRODSFSD_CONFIG} stop --wait 20s
+
+Restart=on-failure
+RestartSec=5s
+TimeoutStartSec=30s
+TimeoutStopSec=30s
+KillMode=mixed
+UMask=0027
+LimitNOFILE=65536
+
+[Install]
+WantedBy=multi-user.target
