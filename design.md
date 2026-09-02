@@ -8,7 +8,7 @@ The initial scope is a single `irodsfsd` instance managing multiple mounts on on
 
 ## 2. Core Design Principles
 
-1. **Separate desired state from observed state.** The REST API and database record whether a mount should be `mounted` or `unmounted`. A reconciler drives child processes and Linux mounts toward that desired state.
+1. **Persist intent before process work.** A normal record means the mount must be running; an unmount tombstone means it must be removed. A reconciler drives child processes and Linux mounts toward that intent.
 2. **Run `irodsfs` as a foreground child.** Force `foreground: true` or the equivalent CLI option so that `exec.Cmd` owns the real FUSE process. Allowing `irodsfs` to daemonize again would make PID tracking, exit detection, and stdout/stderr capture unreliable.
 3. **Do not use PID existence as proof of a successful mount.** A mount becomes `mounted` only after the target and expected FUSE filesystem appear in `/proc/self/mountinfo`.
 4. **Clean up a crash before retrying.** If a child exits unexpectedly while its mount remains, lazy-unmount it immediately to prevent `Transport endpoint is not connected`, then retry.
@@ -34,9 +34,9 @@ CLI parent
 ### Packages
 
 ```text
-cmd/irodsfsd/        main entry point and CLI commands/flags
-internal/config/     daemon configuration loading and validation
-internal/daemon/     go-daemonizer integration, PID lock, signals
+cmd/                 main entry point, CLI commands, and daemon lifecycle
+cmd/commons/         shared CLI helpers such as PID-file handling
+commons/             daemon configuration, endpoints, and shared helpers
 internal/api/        REST handlers, middleware, DTOs
 internal/mount/      service, controllers, state machine, reconciler
 internal/process/    irodsfs start/stop/Wait and process groups
@@ -72,8 +72,8 @@ The daemon also:
 
 - Creates the PID file atomically and rejects a second live instance.
 - Stops accepting new HTTP work on `SIGTERM` or `SIGINT`.
-- Safely unmounts managed mounts during graceful shutdown while preserving `desired_state=mounted`; the next daemon start restores them. Only an explicit unmount request changes the desired state.
-- Sends `SIGTERM` to child process groups and terminates remaining processes after the grace period.
+- Safely unmounts managed mounts during graceful shutdown while preserving their ordinary records; the next daemon start restores them. Only an explicit `Unmount` changes a record to a tombstone. The daemon exits immediately after all managed unmount operations complete.
+- Sends `SIGTERM` to child process groups and terminates remaining processes as part of each bounded unmount operation.
 - Supports `run` under systemd `Type=simple`, while retaining `start` for standalone daemonization.
 
 Daemon stdout/stderr defaults to `/var/log/irodsfsd/irodsfsd.log`. The go-daemonizer options explicitly set the working directory, environment, and standard streams so behavior does not depend on the invoking shell.
@@ -85,15 +85,18 @@ than the file extension. Defaults are applied before decoding, and unknown
 fields are rejected so misspelled settings cannot silently change behavior.
 
 ```yaml
-api_service_port: 13021
-irodsfs_binary: "/usr/local/bin/irodsfs"
-data_dir: "/var/lib/irodsfsd"
-runtime_dir: "/run/irodsfsd"
-mount_root: "/var/lib/irodsfsd/mounts"
+service_endpoint: "tcp://0.0.0.0:13020"
+service_port: 13021
+irodsfs_executable_path: "/usr/local/bin/irodsfs"
+mount_executable_path: "/usr/bin/mount"
+unmount_executable_path: "/usr/bin/umount"
+data_root_path: "/var/lib/irodsfsd"
 pid_file: "/run/irodsfsd/irodsfsd.pid"
-daemon_log_file: "/var/log/irodsfsd/irodsfsd.log"
-working_directory: "/var/lib/irodsfsd"
-allowed_mount_roots:
+log_root_path: "/var/log/irodsfsd"
+mount_root_path: "/var/lib/irodsfsd/mounts"
+recovery_encryption_key: "" # base64-encoded 32-byte key; required in production
+debug: false
+allowed_mount_root_paths:
   - "/mnt/irods"
   - "/var/lib/kubelet"
 
@@ -106,20 +109,26 @@ retry:
 
 mount_timeout: 30s
 unmount_timeout: 15s
-shutdown_grace_period: 20s
+davfs_unmount_timeout: 3m
 reconcile_interval: 10s
-max_concurrent_mounts: 4
-restore_on_start: true
+max_concurrent_mounts: 40
 ```
 
-Startup validates that the binary exists and is executable, required directories have correct permissions, Badger opens successfully, and either `fusermount3` or `fusermount` is available. The service has no application-level authentication; network access is restricted by the host firewall.
+Startup validates that the irodsfs, mount, and unmount binaries exist and are
+executable, required directories have correct permissions, Badger opens
+successfully, and either `fusermount3` or `fusermount` is available. FUSE is
+checked once at daemon startup even though NFS mounts do not use it. The
+service has no application-level authentication; network access is restricted
+by the host firewall.
 
-`mount_root` is the parent directory for managed irodsfs data roots. Each mount
-uses a daemon-generated child directory such as
+`mount_root_path` is the parent directory for managed irodsfs data roots. Each
+mount uses a daemon-generated child directory such as
 `/var/lib/irodsfsd/mounts/<mount-id>` as its irodsfs data root. It is distinct
-from `allowed_mount_roots`, which restricts the local FUSE mount-point paths
-requested through the API. `/var/lib/kubelet` is allowed by default for CSI
-node staging and publishing paths.
+from `allowed_mount_root_paths`, which restricts the local FUSE mount-point
+paths requested through the API. `/var/lib/kubelet` is allowed by default for
+CSI node staging and publishing paths. The daemon log file is
+`<log_root_path>/irodsfsd.log`, and the daemon working directory is
+`data_root_path`.
 
 ## 6. Mount Model and State Machine
 
@@ -129,9 +138,7 @@ node staging and publishing paths.
 type Mount struct {
     ID              string          `json:"id"`
     MountPath       string          `json:"mount_path"`
-    IRODSConfig     json.RawMessage `json:"-"`
-    ConfigSummary   ConfigSummary   `json:"config"`
-    DesiredState    string          `json:"desired_state"` // mounted|unmounted
+    Config          MountConfig     `json:"config"` // encrypted at rest
     State           string          `json:"state"`
     Attempt         int             `json:"attempt"`
     LastError       *APIError       `json:"last_error,omitempty"`
@@ -139,11 +146,14 @@ type Mount struct {
     CreatedAt       time.Time       `json:"created_at"`
     UpdatedAt       time.Time       `json:"updated_at"`
     MountedAt       *time.Time      `json:"mounted_at,omitempty"`
-    StoppedAt       *time.Time      `json:"stopped_at,omitempty"`
 }
 ```
 
-`ConfigSummary` contains only host, port, zone, user, path mappings, and read-only status. It never includes passwords, tokens, or private keys.
+`MountConfig` contains common mount settings and exactly one of `IRODSFSConfig`,
+`DAVFSConfig`, or `NFSConfig`, and is encrypted at rest. API responses reuse the
+same message shape, but are built from a copy whose iRODS password, ticket, PAM
+token, Redis password, and DAVFS password fields have been redacted. The
+original stored credentials are never modified or returned.
 
 ```text
 pending_mount -> mounting -> mounted
@@ -154,13 +164,18 @@ pending_mount -> mounting -> mounted
                      v (attempts exhausted)
                    failed
 
-mounted -> pending_unmount -> unmounting -> unmounted
+mounted -> pending_unmount -> unmounting -> record deleted
                                   |
                                   v
                             retry_wait/failed
 ```
 
-`desired_state` is persisted transactionally as soon as a request is accepted. `state` represents the controller's current observed stage. Every transition is persisted before an event and log record are emitted. If the daemon crashes in an intermediate state, startup reconciliation uses the mount table to determine the real state.
+An ordinary mount record means that the mount must be running and restored
+after a daemon restart. An accepted `Unmount` changes it to a tombstone before
+process work begins, preventing restoration. Every transition is persisted
+before an event and log record are emitted. If the daemon crashes in an
+intermediate state, startup reconciliation uses the tombstone and mount table
+to resume the correct operation.
 
 ### Invariants
 
@@ -173,16 +188,38 @@ mounted -> pending_unmount -> unmounting -> unmounted
 
 ## 7. Mount Workflow
 
-`POST /api/v1/mounts` validates the request, stores the record and iRODS configuration, and returns `202 Accepted`. A potentially long mount and its retries are not tied to the HTTP connection.
+`Mount` or `POST /api/v1/mounts` validates the request, stores the record and
+iRODS configuration, and returns the accepted mount. A potentially long mount
+and its retries are not tied to the client connection. If `mount_id` is absent,
+the server generates one; otherwise the unique caller-supplied ID is used.
 
 1. Validate the request schema, path policy, and uniqueness.
 2. Create a missing mount directory when policy permits, with controlled ownership and mode.
-3. Materialize the submitted configuration at `/var/lib/irodsfsd/mounts/<id>/irodsfs.yaml` with mode `0600`.
-4. Ignore untrusted values for `foreground`, `childprocess`, `watchdogprocess`, `watchpid`, and `instanceid`. Force `foreground: true` and a unique instance ID.
-5. Start the equivalent of `irodsfs --foreground -c <managed-config> <mount-path>`. The exact contract is verified against a pinned irodsfs version in integration tests.
+3. Convert the API configuration to irodsfs JSON in memory. Do not create a credential-bearing configuration file.
+4. Ignore untrusted values for `foreground` and `instanceid`. Force `foreground: true` and use the mount ID as the instance ID.
+5. Start `irodsfs -f -c - <mount-path>` and write the JSON configuration to stdin. The exact contract is verified against a pinned irodsfs version in integration tests.
 6. Write stdout and stderr to an append-only per-mount log and a bounded recent-line ring buffer.
-7. Until `mount_timeout`, ensure the child remains alive and the expected entry appears in `/proc/self/mountinfo`.
-8. Transition to `mounted` on success. On failure, clean up before applying retry policy.
+7. Apply `mount_timeout` from the beginning of per-mount directory and client
+   configuration preparation. The time already spent preparing is subtracted
+   from the readiness wait. Until the resulting deadline, ensure the child
+   remains alive and the expected entry appears in `/proc/self/mountinfo`.
+8. Transition to `mounted` on success. On timeout, terminate the command,
+   inspect the mount table, lazily detach any partial mount, and remove its
+   per-mount data directory when doing so cannot discard staged DAVFS data.
+
+DAVFS and NFS use the system mount helpers through
+`mount -t davfs ...` and `mount -t nfs ...`. These are one-shot commands, so a
+successful command exit is not treated as a client crash. DAVFS receives an
+explicit non-anonymous password through stdin and stores its `davfs2.conf`
+options with mode `0600` under the per-mount data root. NFS uses ordinary
+`umount`. DAVFS also uses ordinary `umount`, allowing its helper to finish
+synchronizing staged cache data before returning. irodsfs continues to use
+`commons.UnmountFuse`. After a successful unmount and client-process exit, the
+daemon removes the complete per-mount data directory, including DAVFS config
+and cache data, before deleting the mount record. If DAVFS cache
+synchronization exceeds `davfs_unmount_timeout`, the daemon uses `UnmountFuse` for a
+lazy detach, returns `DAVFS_LAZY_UNMOUNT`, and keeps both the failed record and
+data directory intact for recovery instead of discarding unsynchronized files.
 
 Each child runs in its own process group. A saved PID is only an observation and is not trusted after restart. The daemon must verify `/proc/<pid>` start time and command line before signaling any recovered PID, preventing harm from PID reuse.
 
@@ -190,19 +227,23 @@ Each child runs in its own process group. A saved PID is only an observation and
 
 Normal unmount:
 
-1. Persist `desired_state=unmounted` first, disabling automatic remount.
-2. Send `SIGTERM` to the child and wait briefly for exit and unmount.
-3. If the mount remains, execute `fusermount3 -u <path>`, or `fusermount -u` where appropriate.
-4. Retry on `EBUSY` or timeout.
-5. When normal retries are exhausted, or when the API uses `force=true`, run `fusermount3 -uz <path>` for a lazy unmount.
-6. Confirm removal from the mount table, terminate any remaining child process group, and transition to `unmounted`.
+1. Persist an unmount tombstone first, disabling automatic remount.
+2. For irodsfs, run irodsfs commons `UnmountFuse` and terminate the foreground
+   child. For NFS, run ordinary `umount`. For DAVFS, run ordinary `umount` so
+   its helper can synchronize staged cache files.
+3. If DAVFS synchronization exceeds `davfs_unmount_timeout`, lazily detach it with
+   `UnmountFuse`, retain its cache and record, and report
+   `DAVFS_LAZY_UNMOUNT`.
+4. Confirm removal from the mount table, terminate any remaining child process
+   group, delete the per-mount data directory after a clean unmount, and then
+   delete the mount record and encrypted credentials.
 
 When `Wait()` reports an unexpected child exit, the supervisor immediately:
 
 1. Records `cleaning`, exit code/signal, and `last_error`.
 2. If the mount remains, runs `fusermount3 -uz <path>`. This is the critical path that prevents a broken FUSE endpoint from producing `Transport endpoint is not connected`.
 3. Verifies that the mount disappeared. If cleanup fails, it transitions to `failed` and does not stack a new mount over the old one.
-4. If the desired state is still `mounted`, schedules a fresh child after backoff. Otherwise it stops.
+4. If the record is not an unmount tombstone, schedule a fresh child after backoff. Otherwise continue the unmount cleanup.
 
 Lazy unmount is attempted before `SIGKILL`. The daemon never automatically unmounts an unrelated filesystem; mount identity must match the managed record.
 
@@ -222,12 +263,19 @@ At startup:
 
 1. Load all mount records from Badger.
 2. Read `/proc/self/mountinfo` once and construct the actual mount map.
-3. For `desired=mounted` with no actual mount, ignore stale PIDs, rematerialize configuration, and enqueue mounting.
-4. For `desired=mounted` with an actual managed mount, clean it up and recreate it by default. A surviving process cannot be supervised reliably, so this restores log and crash ownership.
-5. For `desired=unmounted` with an actual mount, enqueue unmounting.
-6. For an intermediate record with no actual mount, resume according to desired state.
+3. For an ordinary record with no actual mount, ignore stale PIDs, rematerialize configuration, and enqueue mounting.
+4. For an ordinary record with an actual managed mount, clean it up and recreate it by default. A surviving process cannot be supervised reliably, so this restores log and crash ownership.
+5. For an unmount tombstone, resume unmounting and delete the record after cleanup.
+6. For an intermediate mount record with no actual mount, resume mounting or cleanup according to its state.
 
 At a configurable interval, defaulting to ten seconds, the daemon compares child state and mount-table state. Per-ID/path locks prevent conflicts between API work and reconciliation. Each controller also uses a generation number; a completion from an obsolete goroutine is ignored.
+
+The manager registry lock protects only mount-ID/path lookup and reservation.
+It is never held during directory or configuration I/O, process startup,
+mount readiness polling, child waits, mount/unmount commands, or cleanup. Each
+mount has its own lifecycle lock, so a pending, stalled, or failed mount can
+serialize operations for that mount ID without blocking unrelated mounts or
+manager queries.
 
 ## 11. BadgerDB
 
@@ -242,13 +290,32 @@ events/<uuid>/<timestamp-ulid>       -> JSON state-transition event
 
 The mount record and path index are updated in one write transaction. Records include `schema_version`, with migrations run at startup. Runtime PID and process handles are not recovery evidence; the mount table is the final source for observed mount state.
 
-Restoration requires persistent credentials. Badger encryption at rest is enabled, with its key supplied from a root-only file or secret manager outside the database. Managed configuration files and the data directory are readable only by the daemon account. Secrets are never copied into summaries or events. Production startup fails if encryption is required but no key is available; it never silently falls back to plaintext.
+Restoration requires persistent credentials. Badger encryption at rest is enabled, with its base64-encoded 32-byte key supplied through `recovery_encryption_key` in a root-only configuration file or injected from a secret manager. The data directory is readable only by the daemon account. Secrets are never copied into summaries or events. Production startup fails if encryption is required but no key is available; it never silently falls back to plaintext.
 
 Operational procedures cover value-log GC, backup/restore, and disk-full failures. If a database write fails, the daemon neither reports success nor starts the related process operation.
 
-## 12. REST API
+## 12. gRPC and REST API
 
-The API uses JSON under `/api/v1`. Errors have stable machine-readable codes.
+The canonical contract is the protobuf service `api.MountService` in
+`service/api/api.proto`. The gRPC service is exposed through
+`service_endpoint`, while the REST service uses JSON under `/api/v1` on
+`service_port`. Both transports call the same application service and therefore
+have identical validation, mount-ID handling, state transitions, and secret-redaction
+rules. Errors have stable machine-readable codes.
+
+Mount-changing operations are asynchronous. Acceptance means that the operation
+and its state were persisted; clients observe progress through the returned `MountInfo.state`
+or subsequent `GetMount` and `ListMounts` calls. A caller-supplied `mount_id`
+identifies a retried `Mount`; `Unmount` is naturally idempotent by `mount_id`.
+When `mount_id` is omitted, the server generates one, but a client cannot safely
+identify the result if the response is lost.
+
+| gRPC method | REST method and path | Behavior |
+|---|---|---|
+| `Mount` | `POST /api/v1/mounts` | Create and start a mount, using an optional caller-supplied ID |
+| `ListMounts` | `GET /api/v1/mounts` | List mounts with filters and pagination |
+| `GetMount` | `GET /api/v1/mounts/{id}` | Return one secret-free mount resource |
+| `Unmount` | `DELETE /api/v1/mounts/{id}` | Unmount and delete the record after cleanup |
 
 ### Create a mount
 
@@ -257,60 +324,63 @@ POST /api/v1/mounts
 Content-Type: application/json
 
 {
-  "mount_path": "/mnt/irods/alice",
-  "irods_config": {
-    "irods_host": "data.example.org",
-    "irods_port": 1247,
-    "irods_user_name": "alice",
-    "irods_zone_name": "tempZone",
-    "irods_user_password": "secret",
-    "readonly": true,
-    "path_mappings": [
-      {
-        "irods_path": "/tempZone/home/alice/project",
-        "mapping_path": "/",
-        "resource_type": "dir"
-      }
-    ]
+  "mount_id": "optional-client-id",
+  "config": {
+    "irodsfs": {
+      "account": {
+        "irods_host": "data.example.org",
+        "irods_port": 1247,
+        "irods_user_name": "alice",
+        "irods_zone_name": "tempZone",
+        "irods_user_password": "secret"
+      },
+      "path_mappings": [
+        {
+          "irods_path": "/tempZone/home/alice/project",
+          "mapping_path": "/",
+          "resource_type": "dir"
+        }
+      ]
+    },
+    "mount_path": "/mnt/irods/alice",
+    "read_only": true
   }
 }
 ```
 
-The response is `202 Accepted`, includes `Location: /api/v1/mounts/<id>`, and contains a secret-free mount resource. An optional idempotency key prevents duplicate mounts after client timeouts.
+The response is `202 Accepted`, includes `Location: /api/v1/mounts/<id>`, and contains a redacted mount resource. Clients that may retry after a timeout should supply their own `mount_id`.
 
-### Query and control
+### Health endpoints
 
 | Method | Path | Behavior |
 |---|---|---|
-| `GET` | `/api/v1/mounts` | List mounts with state, user, and path filters plus pagination |
-| `GET` | `/api/v1/mounts/{id}` | Return configuration summary, state, retry, and error |
-| `DELETE` | `/api/v1/mounts/{id}` | Unmount and delete asynchronously; returns `202` |
-| `POST` | `/api/v1/mounts/{id}/unmount` | Preserve the record and change desired state |
-| `POST` | `/api/v1/mounts/{id}/mount` | Remount from stored configuration |
-| `POST` | `/api/v1/mounts/{id}/retry` | Reset an exhausted retry counter |
-| `GET` | `/api/v1/mounts/{id}/logs` | Query or tail stored logs |
-| `GET` | `/api/v1/mounts/{id}/logs/stream` | Stream live logs over SSE |
 | `GET` | `/api/v1/healthz` | Process liveness |
 | `GET` | `/api/v1/readyz` | Database and required-dependency readiness |
 
-`DELETE` accepts `?force=true`. A tombstone is retained while deletion is in progress so a daemon restart still completes the unmount before applying record, configuration, and log retention policy.
+A tombstone is retained while unmount is in progress so a daemon restart still completes cleanup before deleting the record and credentials.
 
 ```json
 {
-  "id": "01J...",
-  "mount_path": "/mnt/irods/alice",
-  "desired_state": "mounted",
+  "mount_id": "01J...",
   "state": "retry_wait",
   "attempt": 2,
   "next_retry_at": "2026-08-26T15:00:02Z",
   "pid": 12345,
   "config": {
-    "host": "data.example.org",
-    "port": 1247,
-    "zone": "tempZone",
-    "user": "alice",
-    "readonly": true,
-    "collections": ["/tempZone/home/alice/project"]
+    "irodsfs": {
+      "account": {
+        "irods_host": "data.example.org",
+        "irods_port": 1247,
+        "irods_zone_name": "tempZone",
+        "irods_user_name": "alice",
+        "irods_user_password": "[REDACTED]",
+        "irods_ticket": "[REDACTED]",
+        "irods_pam_token": "[REDACTED]"
+      },
+      "path_mappings": [{"irods_path": "/tempZone/home/alice/project", "mapping_path": "/"}]
+    },
+    "mount_path": "/mnt/irods/alice",
+    "read_only": true
   },
   "last_error": {
     "code": "IRODSFS_EXITED",
@@ -319,7 +389,7 @@ The response is `202 Accepted`, includes `Location: /api/v1/mounts/<id>`, and co
 }
 ```
 
-Status codes are `400` for validation, `404` for missing resources, `409` for path or state conflicts, `413` for oversized bodies, `429` for rate limiting, `500` for internal errors, and `503` for unavailable dependencies. Every response and log entry carries a request ID.
+Status codes are `400` for validation, `404` for missing resources, `409` for path or state conflicts, `413` for oversized bodies, `429` for rate limiting, `500` for internal errors, and `503` for unavailable dependencies.
 
 ## 13. Logs
 
@@ -360,7 +430,7 @@ The first version uses server rendering or a small vanilla TypeScript/JavaScript
 - Limit allowed mount roots, request body size, path-mapping count, and log-query size.
 - Canonicalize paths and inspect existing parent symlinks to prevent escape from an allowed root.
 - Build a child environment from an allowlist instead of inheriting unexpected proxy or iRODS variables.
-- Require configuration files to be `0600`, directories `0700`, and verify PID/runtime ownership.
+- Require data and runtime directories to be `0700` and verify PID/runtime ownership. Credential-bearing irodsfs configuration is sent only through child-process stdin.
 - Accept `allow_other` only when daemon-wide policy permits it.
 - Apply request rate limits and audit logging.
 - Record the request source address separately from the iRODS user used by a mount.
@@ -373,7 +443,6 @@ In addition to structured daemon logs, expose optional Prometheus metrics:
 - `irodsfsd_mount_operations_total{operation,result}`
 - `irodsfsd_mount_operation_duration_seconds`
 - `irodsfsd_child_crashes_total`
-- `irodsfsd_forced_unmounts_total`
 - `irodsfsd_reconcile_errors_total`
 - `irodsfsd_log_dropped_lines_total`
 
@@ -432,7 +501,7 @@ API tests use `httptest`, the race detector, and fuzzing for paths, mountinfo, a
 
 - Mount CRUD model and API
 - Foreground `irodsfs` child management
-- Mountinfo verification and normal/forced unmount
+- Mountinfo verification and FUSE unmount
 - State machine, retry, and crash cleanup
 - Startup reconciliation
 
@@ -458,7 +527,7 @@ API tests use `httptest`, the race detector, and fuzzing for paths, mountinfo, a
 5. The supported `irodsfs` version and exact foreground CLI/config contract
 6. Whether the API accepts a complete irodsfs configuration or only an approved field allowlist
 
-Recommended initial choices are a dedicated OS account, firewall-restricted API access, a separate root-only Badger encryption-key file, safe unmount on shutdown followed by restoration at restart, a pinned irodsfs version, and a configuration allowlist.
+Recommended initial choices are a dedicated OS account, firewall-restricted API access, a root-only configuration containing the Badger encryption key, safe unmount on shutdown followed by restoration at restart, a pinned irodsfs version, and a configuration allowlist.
 
 ## 21. References
 

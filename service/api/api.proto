@@ -1,0 +1,233 @@
+syntax = "proto3";
+
+option go_package = "github.com/cyverse/irodsfsd/service/api;api";
+
+package api;
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/duration.proto";
+
+// Account is used by both requests and responses. Servers must redact
+// irods_user_password, irods_ticket, and irods_pam_token before returning a
+// MountConfig containing it.
+message Account {
+  optional string irods_authentication_scheme = 1;
+  optional bool irods_client_server_negotiation = 2;
+  optional string irods_client_server_policy = 3;
+  string irods_host = 4;
+  int32 irods_port = 5;
+  string irods_zone_name = 6;
+  optional string irods_client_zone_name = 7;
+  string irods_user_name = 8;
+  optional string irods_client_user_name = 9;
+  optional string irods_default_resource = 10;
+  optional string irods_cwd = 11;
+  optional string irods_home = 12;
+  optional string irods_default_hash_scheme = 13;
+  optional string irods_match_hash_policy = 14;
+  optional string irods_encryption_algorithm = 15;
+  optional int32 irods_encryption_key_size = 16;
+  optional int32 irods_encryption_salt_size = 17;
+  optional int32 irods_encryption_num_hash_rounds = 18;
+  optional string irods_ssl_ca_certificate_file = 19;
+  optional string irods_ssl_ca_certificate_path = 20;
+  optional string irods_ssl_verify_server = 21;
+  optional string irods_ssl_certificate_chain_file = 22;
+  optional string irods_ssl_certificate_key_file = 23;
+  optional string irods_ssl_dh_params_file = 24;
+  optional string irods_user_password = 25;
+  optional string irods_ticket = 26;
+  optional string irods_pam_token = 27;
+  optional int32 irods_pam_ttl = 28;
+  optional string irods_ssl_server_name = 29;
+}
+
+message PathMapping {
+  string irods_path = 1;
+  string mapping_path = 2;
+  string resource_type = 3;
+  bool read_only = 4;
+  bool create_dir = 5;
+  bool ignore_not_exist_error = 6;
+}
+
+message ConnectionConfig {
+  optional google.protobuf.Duration creation_timeout = 1;
+  optional int32 init_number = 2;
+  optional int32 max_number = 3;
+  optional int32 max_idle_number = 4;
+  optional google.protobuf.Duration lifespan = 5;
+  optional google.protobuf.Duration idle_timeout = 6;
+  optional google.protobuf.Duration operation_timeout = 7;
+  optional google.protobuf.Duration long_operation_timeout = 8;
+  optional int32 tcp_buffer_size = 9;
+  optional bool wait_connection = 10;
+}
+
+message MetadataCacheTimeoutSetting {
+  string path = 1;
+  google.protobuf.Duration timeout = 2;
+  optional bool inherit = 3;
+}
+
+message MemoryBackendConfig {
+  optional google.protobuf.Duration cleanup_interval = 1;
+  optional google.protobuf.Duration default_ttl = 2;
+}
+
+message RistrettoBackendConfig {
+  optional int64 max_entries = 1;
+  optional int64 max_cost = 2;
+  optional int64 buffer_items = 3;
+  optional google.protobuf.Duration default_ttl = 4;
+}
+
+message RedisBackendConfig {
+  optional string address = 1;
+  optional int32 db = 2;
+  optional string password = 3;
+  optional int32 pool_size = 4;
+  optional string key_prefix = 5;
+  optional google.protobuf.Duration connect_timeout = 6;
+  optional google.protobuf.Duration command_timeout = 7;
+  optional google.protobuf.Duration default_ttl = 8;
+  optional bool enable_account_isolation = 9;
+}
+
+message CacheBackendConfig {
+  string type = 1;
+  optional MemoryBackendConfig memory = 2;
+  optional RistrettoBackendConfig ristretto = 3;
+  optional RedisBackendConfig redis = 4;
+}
+
+message CacheConfig {
+  repeated MetadataCacheTimeoutSetting metadata_timeout_settings = 1;
+  optional bool start_new_transaction = 2;
+  optional CacheBackendConfig backend = 3;
+}
+
+// IRODSFSConfig contains settings passed to the irodsfs client.
+message IRODSFSConfig {
+  Account account = 1;
+  repeated PathMapping path_mappings = 2;
+  optional int32 read_ahead_max = 3;
+  optional int32 read_write_max = 4;
+  repeated string fuse_options = 5;
+  optional int32 uid = 6;
+  optional int32 gid = 7;
+  optional string system_user = 8;
+  optional ConnectionConfig metadata_connection = 9;
+  optional ConnectionConfig io_connection = 10;
+  optional CacheConfig cache = 11;
+  optional string pool_endpoint = 12;
+  bool debug = 13;
+  optional string description = 14;
+}
+
+message DAVFSConfig {
+  string url = 1;
+  optional string username = 2;
+  optional string password = 3;
+  map<string, string> config = 4;
+}
+
+message NFSConfig {
+  string host = 1;
+  int32 port = 2;
+  string path = 3;
+}
+
+// MountConfig contains settings shared by all mount clients and exactly one
+// client-specific configuration.
+message MountConfig {
+  string mount_path = 1;
+  bool read_only = 2;
+  repeated string mount_options = 3;
+
+  oneof client_config {
+    IRODSFSConfig irodsfs = 10;
+    DAVFSConfig davfs = 11;
+    NFSConfig nfs = 12;
+  }
+}
+
+enum MountState {
+  MOUNT_STATE_UNSPECIFIED = 0;
+  MOUNT_STATE_PENDING_MOUNT = 1;
+  MOUNT_STATE_MOUNTING = 2;
+  MOUNT_STATE_MOUNTED = 3;
+  MOUNT_STATE_PENDING_UNMOUNT = 4;
+  MOUNT_STATE_UNMOUNTING = 5;
+  MOUNT_STATE_RETRY_WAIT = 6;
+  MOUNT_STATE_FAILED = 7;
+}
+
+message APIError {
+  string code = 1;
+  string message = 2;
+  bool retryable = 3;
+  map<string, string> details = 4;
+}
+
+// MountInfo reuses the submitted MountConfig. iRODS credentials, Redis backend
+// password, and DAVFS password are redacted and never contain original values.
+message MountInfo {
+  string mount_id = 1;
+  MountState state = 2;
+  MountConfig config = 3;
+  int32 attempt = 4;
+  APIError last_error = 5;
+  int64 pid = 6;
+  google.protobuf.Timestamp created_at = 7;
+  google.protobuf.Timestamp updated_at = 8;
+  google.protobuf.Timestamp mounted_at = 9;
+  google.protobuf.Timestamp unmounted_at = 10;
+  google.protobuf.Timestamp next_retry_at = 11;
+}
+
+message MountRequest {
+  // If omitted, the server generates a mount ID. A supplied ID must be unique.
+  optional string mount_id = 1;
+  MountConfig config = 2;
+}
+
+message MountResponse {
+  MountInfo mount = 1;
+}
+
+message UnmountRequest {
+  string mount_id = 1;
+}
+
+message UnmountResponse {
+  // The record remains queryable in an unmounting state until cleanup finishes.
+  MountInfo mount = 1;
+}
+
+message ListMountsRequest {
+  repeated MountState states = 1;
+  optional string mount_path_prefix = 2;
+  optional string client_user = 3;
+}
+
+message ListMountsResponse {
+  repeated MountInfo mounts = 1;
+}
+
+message GetMountRequest {
+  string mount_id = 1;
+}
+
+message GetMountResponse {
+  MountInfo mount = 1;
+}
+
+// MountService manages the complete lifetime of an irodsfs mount. Mount
+// creates and starts a mount; Unmount stops it and removes its stored record.
+service MountService {
+  rpc Mount(MountRequest) returns (MountResponse) {}
+  rpc Unmount(UnmountRequest) returns (UnmountResponse) {}
+  rpc ListMounts(ListMountsRequest) returns (ListMountsResponse) {}
+  rpc GetMount(GetMountRequest) returns (GetMountResponse) {}
+}

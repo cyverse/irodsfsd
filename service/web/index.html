@@ -1,0 +1,530 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>irodsfsd</title>
+<style>
+  :root {
+    --bg: #f7f7f8;
+    --panel: #ffffff;
+    --border: #e0e0e5;
+    --text: #1b1c1f;
+    --muted: #6b6f76;
+    --accent: #2f6fed;
+    --accent-fg: #ffffff;
+    --danger: #c93636;
+    --danger-fg: #ffffff;
+    --code-bg: #101114;
+    --code-fg: #d8dadf;
+    --stderr: #ff8a80;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #14151a;
+      --panel: #1c1e24;
+      --border: #2c2f37;
+      --text: #e7e8ea;
+      --muted: #9a9ea8;
+      --accent: #6ea2ff;
+      --accent-fg: #0a0c10;
+      --danger: #ff6b6b;
+      --danger-fg: #0a0c10;
+      --code-bg: #0a0b0d;
+      --code-fg: #d8dadf;
+      --stderr: #ff8a80;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font: 14px/1.45 -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 20px;
+    border-bottom: 1px solid var(--border);
+    background: var(--panel);
+  }
+  header h1 { font-size: 16px; margin: 0; font-weight: 600; }
+  header .spacer { flex: 1; }
+  header .status { color: var(--muted); font-size: 12px; }
+  main { padding: 20px; max-width: 1200px; margin: 0 auto; }
+  .panel {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    margin-bottom: 20px;
+  }
+  .panel-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+  }
+  .panel-header h2 { font-size: 13px; margin: 0; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); }
+  .panel-body { padding: 16px; }
+  button {
+    font: inherit;
+    border: 1px solid var(--border);
+    background: var(--panel);
+    color: var(--text);
+    border-radius: 6px;
+    padding: 6px 12px;
+    cursor: pointer;
+  }
+  button:hover { border-color: var(--accent); }
+  button.primary { background: var(--accent); color: var(--accent-fg); border-color: var(--accent); }
+  button.danger { background: transparent; color: var(--danger); border-color: var(--danger); }
+  button.danger:hover { background: var(--danger); color: var(--danger-fg); }
+  button:disabled { opacity: .5; cursor: default; }
+  input, select {
+    font: inherit;
+    padding: 6px 8px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--bg);
+    color: var(--text);
+    width: 100%;
+  }
+  label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 4px; }
+  .field { margin-bottom: 10px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px 14px; }
+  .checkbox-field { display: flex; align-items: center; gap: 8px; }
+  .checkbox-field input { width: auto; }
+  form .actions { margin-top: 12px; display: flex; gap: 8px; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  th { color: var(--muted); font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: .03em; }
+  td.mono, .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 12px; }
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 600; white-space: nowrap; }
+  .badge-mounted { background: #1f8a4d22; color: #1f8a4d; }
+  .badge-mounting, .badge-pending { background: #b8860b22; color: #b8860b; }
+  .badge-retry { background: #c9763622; color: #c97636; }
+  .badge-failed { background: #c9363622; color: #c93636; }
+  .badge-unmounting { background: #6b6f7622; color: #6b6f76; }
+  .row-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+  .error-detail { color: var(--danger); font-size: 12px; max-width: 260px; }
+  .empty { color: var(--muted); padding: 24px; text-align: center; }
+  .banner {
+    padding: 10px 14px;
+    border-radius: 6px;
+    margin-bottom: 14px;
+    font-size: 13px;
+    display: none;
+  }
+  .banner.error { display: block; background: #c9363622; color: var(--danger); border: 1px solid var(--danger); }
+  .overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,.45);
+    display: none; align-items: center; justify-content: center; padding: 24px;
+  }
+  .overlay.open { display: flex; }
+  .modal {
+    background: var(--panel); border: 1px solid var(--border); border-radius: 8px;
+    width: min(760px, 100%); max-height: 80vh; display: flex; flex-direction: column;
+  }
+  .modal-header { display: flex; align-items: center; gap: 10px; padding: 12px 16px; border-bottom: 1px solid var(--border); }
+  .modal-header h3 { margin: 0; font-size: 14px; flex: 1; }
+  .log-lines {
+    background: var(--code-bg); color: var(--code-fg);
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 12px; padding: 12px 16px; overflow: auto; flex: 1; white-space: pre-wrap; word-break: break-all;
+  }
+  .log-line.stderr { color: var(--stderr); }
+  .log-empty { color: var(--muted); padding: 12px 16px; }
+  select#client-type { max-width: 220px; }
+  .hidden { display: none; }
+</style>
+</head>
+<body>
+<header>
+  <h1>irodsfsd</h1>
+  <div class="spacer"></div>
+  <div class="status" id="status">loading&hellip;</div>
+</header>
+<main>
+  <div class="banner error" id="error-banner"></div>
+
+  <section class="panel">
+    <div class="panel-header">
+      <h2>New mount</h2>
+      <div class="spacer"></div>
+      <button type="button" id="toggle-form">+ New mount</button>
+    </div>
+    <div class="panel-body hidden" id="form-body">
+      <form id="mount-form">
+        <div class="grid">
+          <div class="field">
+            <label for="client-type">Client</label>
+            <select id="client-type">
+              <option value="irodsfs">irodsFS</option>
+              <option value="davfs">DAVFS</option>
+              <option value="nfs">NFS</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="mount-path">Mount path</label>
+            <input id="mount-path" placeholder="/mnt/irods/alice" required>
+          </div>
+          <div class="field checkbox-field">
+            <input type="checkbox" id="read-only">
+            <label for="read-only" style="margin:0">Read-only</label>
+          </div>
+        </div>
+
+        <div id="fields-irodsfs" class="grid">
+          <div class="field"><label for="irods-host">iRODS host</label><input id="irods-host"></div>
+          <div class="field"><label for="irods-port">iRODS port</label><input id="irods-port" type="number" placeholder="1247"></div>
+          <div class="field"><label for="irods-zone">Zone</label><input id="irods-zone"></div>
+          <div class="field"><label for="irods-user">User</label><input id="irods-user"></div>
+          <div class="field"><label for="irods-password">Password</label><input id="irods-password" type="password" autocomplete="new-password"></div>
+          <div class="field"><label for="irods-path">iRODS path</label><input id="irods-path" placeholder="/tempZone/home/alice"></div>
+        </div>
+
+        <div id="fields-davfs" class="grid hidden">
+          <div class="field"><label for="davfs-url">URL</label><input id="davfs-url" placeholder="https://dav.example.org"></div>
+          <div class="field"><label for="davfs-username">Username</label><input id="davfs-username"></div>
+          <div class="field"><label for="davfs-password">Password</label><input id="davfs-password" type="password" autocomplete="new-password"></div>
+        </div>
+
+        <div id="fields-nfs" class="grid hidden">
+          <div class="field"><label for="nfs-host">Host</label><input id="nfs-host"></div>
+          <div class="field"><label for="nfs-port">Port</label><input id="nfs-port" type="number" placeholder="2049"></div>
+          <div class="field"><label for="nfs-path">Export path</label><input id="nfs-path" placeholder="/exports/data"></div>
+        </div>
+
+        <div class="actions">
+          <button type="submit" class="primary">Mount</button>
+          <button type="button" id="cancel-form">Cancel</button>
+        </div>
+      </form>
+    </div>
+  </section>
+
+  <section class="panel">
+    <div class="panel-header">
+      <h2>Mounts</h2>
+      <div class="spacer"></div>
+      <button type="button" id="refresh-now">Refresh</button>
+    </div>
+    <div class="panel-body" style="padding:0">
+      <table>
+        <thead>
+          <tr>
+            <th>State</th>
+            <th>Mount ID</th>
+            <th>Path</th>
+            <th>Client</th>
+            <th>RO</th>
+            <th>PID</th>
+            <th>Attempt</th>
+            <th>Next retry</th>
+            <th>Last error</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="mount-rows"></tbody>
+      </table>
+      <div class="empty hidden" id="empty-state">No mounts.</div>
+    </div>
+  </section>
+</main>
+
+<div class="overlay" id="log-overlay">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="log-title">Logs</h3>
+      <button type="button" id="log-refresh">Refresh</button>
+      <button type="button" id="log-close">Close</button>
+    </div>
+    <div class="log-lines" id="log-lines"></div>
+  </div>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  var REFRESH_INTERVAL_MS = 3000;
+
+  function el(id) { return document.getElementById(id); }
+  function escapeHtml(value) {
+    return String(value == null ? "" : value).replace(/[&<>"']/g, function (c) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+    });
+  }
+
+  function showError(message) {
+    var banner = el("error-banner");
+    banner.textContent = message;
+    banner.style.display = "block";
+  }
+  function clearError() {
+    var banner = el("error-banner");
+    banner.style.display = "none";
+    banner.textContent = "";
+  }
+
+  function apiFetch(url, options) {
+    return fetch(url, options).then(function (response) {
+      if (response.status === 204) return null;
+      return response.text().then(function (text) {
+        var body = null;
+        try { body = text ? JSON.parse(text) : null; } catch (e) { /* non-JSON error body */ }
+        if (!response.ok) {
+          var message = (body && body.error && body.error.message) || response.statusText || ("HTTP " + response.status);
+          throw new Error(message);
+        }
+        return body;
+      });
+    });
+  }
+
+  var STATE_BADGE = {
+    MOUNT_STATE_MOUNTED: "badge-mounted",
+    MOUNT_STATE_MOUNTING: "badge-mounting",
+    MOUNT_STATE_PENDING_MOUNT: "badge-pending",
+    MOUNT_STATE_PENDING_UNMOUNT: "badge-pending",
+    MOUNT_STATE_UNMOUNTING: "badge-unmounting",
+    MOUNT_STATE_RETRY_WAIT: "badge-retry",
+    MOUNT_STATE_FAILED: "badge-failed"
+  };
+
+  function stateLabel(state) {
+    return String(state || "MOUNT_STATE_UNSPECIFIED").replace("MOUNT_STATE_", "");
+  }
+
+  function clientSummary(config) {
+    if (!config) return "";
+    if (config.irodsfs) {
+      var account = config.irodsfs.account || {};
+      return "irodsFS " + escapeHtml(account.irods_user_name || "?") + "@" + escapeHtml(account.irods_host || "?") +
+        " (" + escapeHtml(account.irods_zone_name || "?") + ")";
+    }
+    if (config.davfs) {
+      return "DAVFS " + escapeHtml(config.davfs.url || "");
+    }
+    if (config.nfs) {
+      return "NFS " + escapeHtml(config.nfs.host || "") + ":" + escapeHtml(config.nfs.path || "");
+    }
+    return "";
+  }
+
+  function formatTime(value) {
+    if (!value) return "–";
+    var date = new Date(value);
+    if (isNaN(date.getTime())) return "–";
+    return date.toLocaleString();
+  }
+
+  function renderMounts(mounts) {
+    var tbody = el("mount-rows");
+    var emptyState = el("empty-state");
+    tbody.innerHTML = "";
+    if (!mounts || mounts.length === 0) {
+      emptyState.classList.remove("hidden");
+      return;
+    }
+    emptyState.classList.add("hidden");
+
+    mounts.forEach(function (mount) {
+      var config = mount.config || {};
+      var lastError = mount.last_error;
+      var row = document.createElement("tr");
+      row.innerHTML =
+        "<td><span class=\"badge " + (STATE_BADGE[mount.state] || "badge-pending") + "\">" + escapeHtml(stateLabel(mount.state)) + "</span></td>" +
+        "<td class=\"mono\">" + escapeHtml(mount.mount_id) + "</td>" +
+        "<td class=\"mono\">" + escapeHtml(config.mount_path) + "</td>" +
+        "<td>" + clientSummary(config) + "</td>" +
+        "<td>" + (config.read_only ? "yes" : "no") + "</td>" +
+        "<td class=\"mono\">" + (mount.pid ? escapeHtml(mount.pid) : "–") + "</td>" +
+        "<td>" + (mount.attempt || 1) + "</td>" +
+        "<td>" + formatTime(mount.next_retry_at) + "</td>" +
+        "<td class=\"error-detail\" title=\"" + escapeHtml(lastError && lastError.message) + "\">" +
+          (lastError ? escapeHtml(lastError.code) : "") +
+        "</td>" +
+        "<td></td>";
+
+      var actions = document.createElement("div");
+      actions.className = "row-actions";
+
+      var logsButton = document.createElement("button");
+      logsButton.type = "button";
+      logsButton.textContent = "Logs";
+      logsButton.addEventListener("click", function () { openLogs(mount.mount_id); });
+      actions.appendChild(logsButton);
+
+      var unmountButton = document.createElement("button");
+      unmountButton.type = "button";
+      unmountButton.className = "danger";
+      unmountButton.textContent = "Unmount";
+      unmountButton.disabled = mount.state === "MOUNT_STATE_UNMOUNTING" || mount.state === "MOUNT_STATE_PENDING_UNMOUNT";
+      unmountButton.addEventListener("click", function () { unmountMount(mount.mount_id); });
+      actions.appendChild(unmountButton);
+
+      row.lastElementChild.appendChild(actions);
+      tbody.appendChild(row);
+    });
+  }
+
+  function loadMounts() {
+    return apiFetch("/api/v1/mounts").then(function (body) {
+      clearError();
+      el("status").textContent = "updated " + new Date().toLocaleTimeString();
+      renderMounts((body && body.mounts) || []);
+    }).catch(function (err) {
+      el("status").textContent = "update failed";
+      showError("Failed to load mounts: " + err.message);
+    });
+  }
+
+  function unmountMount(mountId) {
+    if (!window.confirm("Unmount " + mountId + "?")) return;
+    apiFetch("/api/v1/mounts/" + encodeURIComponent(mountId), { method: "DELETE" })
+      .then(function () { clearError(); loadMounts(); })
+      .catch(function (err) { showError("Unmount failed: " + err.message); });
+  }
+
+  // --- mount creation form ---
+
+  function selectedClient() { return el("client-type").value; }
+
+  function updateFormFields() {
+    ["irodsfs", "davfs", "nfs"].forEach(function (client) {
+      el("fields-" + client).classList.toggle("hidden", client !== selectedClient());
+    });
+  }
+
+  function buildMountConfig() {
+    var mountPath = el("mount-path").value.trim();
+    if (!mountPath) throw new Error("mount path is required");
+    var config = { mount_path: mountPath, read_only: el("read-only").checked };
+
+    var client = selectedClient();
+    if (client === "irodsfs") {
+      var account = {
+        irods_host: el("irods-host").value.trim(),
+        irods_zone_name: el("irods-zone").value.trim(),
+        irods_user_name: el("irods-user").value.trim()
+      };
+      var port = el("irods-port").value.trim();
+      if (port) account.irods_port = parseInt(port, 10);
+      var password = el("irods-password").value;
+      if (password) account.irods_user_password = password;
+
+      var irodsPath = el("irods-path").value.trim();
+      config.irodsfs = {
+        account: account,
+        path_mappings: irodsPath ? [{ irods_path: irodsPath, mapping_path: "/", resource_type: "dir" }] : []
+      };
+    } else if (client === "davfs") {
+      config.davfs = {
+        url: el("davfs-url").value.trim(),
+        username: el("davfs-username").value.trim() || undefined,
+        password: el("davfs-password").value || undefined
+      };
+    } else if (client === "nfs") {
+      var nfsConfig = { host: el("nfs-host").value.trim(), path: el("nfs-path").value.trim() };
+      var nfsPort = el("nfs-port").value.trim();
+      if (nfsPort) nfsConfig.port = parseInt(nfsPort, 10);
+      config.nfs = nfsConfig;
+    }
+    return config;
+  }
+
+  function resetForm() {
+    el("mount-form").reset();
+    updateFormFields();
+  }
+
+  function submitMountForm(event) {
+    event.preventDefault();
+    var config;
+    try {
+      config = buildMountConfig();
+    } catch (err) {
+      showError(err.message);
+      return;
+    }
+    apiFetch("/api/v1/mounts", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ config: config })
+    }).then(function () {
+      clearError();
+      resetForm();
+      el("form-body").classList.add("hidden");
+      loadMounts();
+    }).catch(function (err) {
+      showError("Mount failed: " + err.message);
+    });
+  }
+
+  // --- logs ---
+
+  function renderLogs(records) {
+    var container = el("log-lines");
+    if (!records || records.length === 0) {
+      container.innerHTML = "<div class=\"log-empty\">No log lines yet.</div>";
+      return;
+    }
+    container.innerHTML = records.map(function (record) {
+      var cls = record.stream === "stderr" ? "log-line stderr" : "log-line";
+      return "<div class=\"" + cls + "\">[" + escapeHtml(record.time) + "] " + escapeHtml(record.message) + "</div>";
+    }).join("");
+    container.scrollTop = container.scrollHeight;
+  }
+
+  var currentLogMountId = null;
+
+  function loadLogs() {
+    if (!currentLogMountId) return;
+    apiFetch("/api/v1/mounts/" + encodeURIComponent(currentLogMountId) + "/logs?tail=200")
+      .then(function (body) { renderLogs((body && body.logs) || []); })
+      .catch(function (err) {
+        el("log-lines").innerHTML = "<div class=\"log-empty\">Failed to load logs: " + escapeHtml(err.message) + "</div>";
+      });
+  }
+
+  function openLogs(mountId) {
+    currentLogMountId = mountId;
+    el("log-title").textContent = "Logs — " + mountId;
+    el("log-overlay").classList.add("open");
+    loadLogs();
+  }
+
+  function closeLogs() {
+    currentLogMountId = null;
+    el("log-overlay").classList.remove("open");
+  }
+
+  // --- wiring ---
+
+  el("toggle-form").addEventListener("click", function () {
+    el("form-body").classList.toggle("hidden");
+  });
+  el("cancel-form").addEventListener("click", function () {
+    resetForm();
+    el("form-body").classList.add("hidden");
+  });
+  el("client-type").addEventListener("change", updateFormFields);
+  el("mount-form").addEventListener("submit", submitMountForm);
+  el("refresh-now").addEventListener("click", loadMounts);
+  el("log-refresh").addEventListener("click", loadLogs);
+  el("log-close").addEventListener("click", closeLogs);
+  el("log-overlay").addEventListener("click", function (event) {
+    if (event.target === el("log-overlay")) closeLogs();
+  });
+
+  updateFormFields();
+  loadMounts();
+  setInterval(loadMounts, REFRESH_INTERVAL_MS);
+})();
+</script>
+</body>
+</html>
