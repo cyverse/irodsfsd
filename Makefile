@@ -35,6 +35,13 @@ protobuf:
 	export PATH=${PATH}:${GOPATH}/bin; protoc --go_out=. --go_opt=paths=source_relative --go-grpc_out=. --go-grpc_opt=paths=source_relative service/api/api.proto
 
 
+.PHONY: examples
+examples:
+	CGO_ENABLED=0 GOOS=linux go build -ldflags=${LDFLAGS} -o ./client_examples/mount/mount.out ./client_examples/mount/mount.go
+	CGO_ENABLED=0 GOOS=linux go build -ldflags=${LDFLAGS} -o ./client_examples/unmount/unmount.out ./client_examples/unmount/unmount.go
+	CGO_ENABLED=0 GOOS=linux go build -ldflags=${LDFLAGS} -o ./client_examples/mount_list/mount_list.out ./client_examples/mount_list/mount_list.go
+
+
 .PHONY: release
 release: build
 	mkdir -p release

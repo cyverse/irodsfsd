@@ -1,0 +1,19 @@
+{
+  "mount_path": "/home/iychoi/mount1",
+  "read_only": false,
+  "irodsfs": {
+    "account": {
+      "irods_host": "data.cyverse.org",
+      "irods_port": 1247,
+      "irods_zone_name": "iplant",
+      "irods_user_name": "iychoi",
+      "irods_user_password": ""
+    },
+    "path_mappings": [
+      {
+        "irods_path": "/iplant/home/iychoi",
+        "mapping_path": "/"
+      }
+    ]
+  }
+}

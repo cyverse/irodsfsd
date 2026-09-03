@@ -2,7 +2,11 @@
 
 ## 1. Purpose
 
-`irodsfsd` is a long-running Linux daemon written in Go. It manages multiple `irodsfs` mounts through a REST API and web interface, including each child process, its state, and its logs. Desired mount definitions are persisted in BadgerDB. After a daemon restart, they are reconciled with the actual system state and restored automatically.
+`irodsfsd` is a long-running Linux daemon written in Go. It manages irodsfs,
+DAVFS, and NFS mounts through gRPC, REST, and an embedded web interface,
+including supervised processes, state, and logs. Desired mount definitions are
+persisted in BadgerDB. After a daemon restart, they are reconciled with the
+actual system state and restored automatically.
 
 The initial scope is a single `irodsfsd` instance managing multiple mounts on one Linux host. High availability, cross-host mount coordination, and reimplementation of iRODS are out of scope.
 
@@ -20,7 +24,8 @@ The initial scope is a single `irodsfsd` instance managing multiple mounts on on
 ```text
 CLI parent
   `-- go-daemonizer --> irodsfsd daemon
-                           |-- HTTP API + Web UI
+                           |-- gRPC API
+                           |-- REST API + Web UI
                            |-- Mount Service
                            |     |-- per-mount controller/state machine
                            |     |-- retry scheduler
@@ -37,16 +42,20 @@ CLI parent
 cmd/                 main entry point, CLI commands, and daemon lifecycle
 cmd/commons/         shared CLI helpers such as PID-file handling
 commons/             daemon configuration, endpoints, and shared helpers
-internal/api/        REST handlers, middleware, DTOs
-internal/mount/      service, controllers, state machine, reconciler
-internal/process/    irodsfs start/stop/Wait and process groups
-internal/fuse/       mountinfo inspection and fusermount execution
-internal/store/      Badger repositories and schema migrations
-internal/logstore/   child log files, tail, and queries
-internal/web/        embedded static UI
+client/              reusable gRPC client for mount operations
+client_examples/     mount, unmount, and mount-list executables
+service/             manager, supervisor, gRPC/REST servers, metrics
+service/api/         protobuf contract and generated gRPC code
+service/store/       Badger repository and schema migrations
+service/logstore/    per-mount child log storage and queries
+service/web/         embedded management UI
+packaging/systemd/   service unit, documentation, and example config
 ```
 
-HTTP handlers do not launch processes directly. They submit commands to `MountService`. Mount records in BadgerDB are the source of truth. The in-memory registry contains only ephemeral data such as running `exec.Cmd` instances, cancellation functions, and per-mount locks.
+gRPC and REST handlers do not launch processes directly. They invoke the same
+`MountServer`, which delegates to `MountManager`. Mount records in BadgerDB are
+the source of truth. The in-memory registry contains ephemeral process handles,
+retry timers, logs, and per-mount locks.
 
 ## 4. Daemon and CLI
 
@@ -62,7 +71,9 @@ irodsfsd status  --config /etc/irodsfsd/config.yaml
 irodsfsd version
 ```
 
-Common options are `--config/-c`, `--log-level`, and `--debug`. Command-line values override configuration-file values. The implementation uses Cobra and keeps command declaration separate from validation and application startup.
+Common options are `--config/-c` and `--debug/-d`. Command-line values override
+configuration-file values. The implementation uses Cobra and keeps command
+declaration separate from validation and application startup.
 
 ### go-daemonizer
 
@@ -81,12 +92,13 @@ Daemon stdout/stderr defaults to `/var/log/irodsfsd/irodsfsd.log`. The go-daemon
 ## 5. Daemon Configuration
 
 Both YAML and JSON are supported. The format is detected from content rather
-than the file extension. Defaults are applied before decoding, and unknown
-fields are rejected so misspelled settings cannot silently change behavior.
+than the file extension. Defaults are applied before decoding. Daemon config
+currently ignores unknown fields for forward compatibility; the client-side
+mount JSON loader and REST protobuf decoder reject unknown mount fields.
 
 ```yaml
 service_endpoint: "tcp://0.0.0.0:13020"
-service_port: 13021
+management_service_port: 13021
 irodsfs_executable_path: "/usr/local/bin/irodsfs"
 mount_executable_path: "/usr/bin/mount"
 unmount_executable_path: "/usr/bin/umount"
@@ -194,7 +206,9 @@ and its retries are not tied to the client connection. If `mount_id` is absent,
 the server generates one; otherwise the unique caller-supplied ID is used.
 
 1. Validate the request schema, path policy, and uniqueness.
-2. Create a missing mount directory when policy permits, with controlled ownership and mode.
+2. Create the local mount path with mode `0755` when it does not exist, after
+   confirming that it is under an allowed root and does not conflict with a
+   daemon-reserved path. Reject an existing non-directory.
 3. Convert the API configuration to irodsfs JSON in memory. Do not create a credential-bearing configuration file.
 4. Ignore untrusted values for `foreground` and `instanceid`. Force `foreground: true` and use the mount ID as the instance ID.
 5. Start `irodsfs -f -c - <mount-path>` and write the JSON configuration to stdin. The exact contract is verified against a pinned irodsfs version in integration tests.
@@ -221,7 +235,9 @@ synchronization exceeds `davfs_unmount_timeout`, the daemon uses `UnmountFuse` f
 lazy detach, returns `DAVFS_LAZY_UNMOUNT`, and keeps both the failed record and
 data directory intact for recovery instead of discarding unsynchronized files.
 
-Each child runs in its own process group. A saved PID is only an observation and is not trusted after restart. The daemon must verify `/proc/<pid>` start time and command line before signaling any recovered PID, preventing harm from PID reuse.
+The foreground irodsfs child is owned through `exec.Cmd`. A saved PID is only
+an observation and is never used for recovery-time signaling; reconciliation
+operates on verified mount paths instead, avoiding PID-reuse hazards.
 
 ## 8. Unmount and Crash Recovery
 
@@ -254,7 +270,6 @@ Mount and unmount operations have configurable maximum attempts, initial/maximum
 - Permanent errors such as invalid configuration, path-policy violations, or missing credentials fail immediately.
 - iRODS connection failures, temporary FUSE failures, and `EBUSY` are retryable.
 - A new mount or unmount request cancels an older retry timer.
-- `POST /mounts/{id}/retry` resets the counter for an exhausted operation.
 - Global mount concurrency is limited, and startup restoration adds jitter to avoid a connection surge against the iRODS server.
 
 ## 10. Startup Restoration and Reconciliation
@@ -299,21 +314,21 @@ Operational procedures cover value-log GC, backup/restore, and disk-full failure
 The canonical contract is the protobuf service `api.MountService` in
 `service/api/api.proto`. The gRPC service is exposed through
 `service_endpoint`, while the REST service uses JSON under `/api/v1` on
-`service_port`. Both transports call the same application service and therefore
+`management_service_port`. Both transports call the same application service and therefore
 have identical validation, mount-ID handling, state transitions, and secret-redaction
 rules. Errors have stable machine-readable codes.
 
-Mount-changing operations are asynchronous. Acceptance means that the operation
-and its state were persisted; clients observe progress through the returned `MountInfo.state`
-or subsequent `GetMount` and `ListMounts` calls. A caller-supplied `mount_id`
-identifies a retried `Mount`; `Unmount` is naturally idempotent by `mount_id`.
-When `mount_id` is omitted, the server generates one, but a client cannot safely
-identify the result if the response is lost.
+`Mount` persists intent, starts the selected client, and returns before mount
+readiness polling completes. Clients observe progress through the returned
+`MountInfo.state` or subsequent `GetMount` and `ListMounts` calls. `Unmount`
+waits for the bounded client-specific unmount and cleanup before returning. A
+caller-supplied `mount_id` identifies a retried `Mount`; when it is omitted the
+server generates one.
 
 | gRPC method | REST method and path | Behavior |
 |---|---|---|
 | `Mount` | `POST /api/v1/mounts` | Create and start a mount, using an optional caller-supplied ID |
-| `ListMounts` | `GET /api/v1/mounts` | List mounts with filters and pagination |
+| `ListMounts` | `GET /api/v1/mounts` | List mounts with state, path-prefix, and client-user filters |
 | `GetMount` | `GET /api/v1/mounts/{id}` | Return one secret-free mount resource |
 | `Unmount` | `DELETE /api/v1/mounts/{id}` | Unmount and delete the record after cleanup |
 
@@ -357,6 +372,41 @@ The response is `202 Accepted`, includes `Location: /api/v1/mounts/<id>`, and co
 | `GET` | `/api/v1/healthz` | Process liveness |
 | `GET` | `/api/v1/readyz` | Database and required-dependency readiness |
 
+The shorter `/healthz` and `/readyz` aliases are also registered. Metrics are
+served from `/metrics`, mount logs from
+`/api/v1/mounts/{id}/logs`, and the embedded management UI from `/`.
+
+### Go client and executable examples
+
+The reusable `client.MountServiceClient` follows the same lifecycle style as
+the irodsfs-pool client:
+
+```go
+mountClient := client.NewMountServiceClient(endpoint, 5*time.Minute, true, logger)
+if err := mountClient.Connect(); err != nil { /* handle */ }
+defer mountClient.Disconnect()
+
+info, err := mountClient.Mount(config)                    // generated ID
+info, err := mountClient.MountWithID("my-mount", config) // supplied ID
+mounts, err := mountClient.ListMounts(&client.ListMountsFilter{
+    States: []client.MountState{client.MountStateMounted},
+})
+info, err := mountClient.GetMount("my-mount")
+info, err := mountClient.Unmount("my-mount")
+```
+
+The third constructor argument enables automatic reconnection. A gRPC
+`Unavailable` error first triggers one immediate reconnect attempt. If that
+succeeds, the RPC is retried once; otherwise one background reconnect loop
+continues with exponential backoff. Calls made while it is reconnecting fail
+immediately so callers can retry later. Every logger entry is enriched with a
+unique `clientID`, and `Disconnect` cancels any running reconnect loop.
+
+`client.LoadMountConfigJSONFile` strictly decodes protobuf JSON into a
+`MountConfig`. Runnable examples live under `client_examples/mount`,
+`client_examples/unmount`, and `client_examples/mount_list`; successful mount
+and unmount commands print the mount ID and returned state.
+
 A tombstone is retained while unmount is in progress so a daemon restart still completes cleanup before deleting the record and credentials.
 
 ```json
@@ -389,7 +439,10 @@ A tombstone is retained while unmount is in progress so a daemon restart still c
 }
 ```
 
-Status codes are `400` for validation, `404` for missing resources, `409` for path or state conflicts, `413` for oversized bodies, `429` for rate limiting, `500` for internal errors, and `503` for unavailable dependencies.
+Status codes are `400` for validation, `404` for missing resources, `409` for
+path or state conflicts, `413` for oversized bodies, `429` when mount capacity
+is exhausted, `500` for internal errors, and `503` for unavailable
+dependencies.
 
 ## 13. Logs
 
@@ -398,10 +451,13 @@ Each mount writes to `/var/log/irodsfsd/mounts/<id>/irodsfs.log`. Stdout and std
 ```text
 GET .../logs?tail=200
 GET .../logs?since=2026-08-26T00:00:00Z&limit=1000
-GET .../logs/stream                       # text/event-stream
 ```
 
-Response size and `limit` are bounded, with size- and retention-based rotation. A slow SSE client never creates an unbounded buffer; old live lines are dropped and a gap event is sent. A known-secret redaction filter provides defense in depth, but configuration and passwords are never placed on the command line.
+Response size and `limit` are bounded, and the current log is managed with
+size- and retention-based rotation. Queries read the active log file; rotated
+backups are retained on disk but are not included. A known-secret redaction
+filter provides defense in depth, while configuration and passwords are never
+placed on the command line. Live SSE streaming is not currently implemented.
 
 The daemon audit log records API principal, action, mount ID/path, and result without passwords or complete configuration.
 
@@ -409,19 +465,19 @@ The daemon audit log records API principal, action, mount ID/path, and result wi
 
 Static assets are embedded in the Go binary and served at `/`, sharing the REST API origin.
 
-The mount table displays:
+The current mount table displays:
 
-- Observed and desired-state badges
+- Current state
 - iRODS user, zone, and host
 - Local mount path
-- Collections/data objects and mapping paths
 - Read-only status
-- PID, start time, and uptime
-- Attempt count, next retry, and latest error
-- Mount, Unmount, Retry, and Force Unmount actions
-- Recent logs and a live-log drawer
+- PID and attempt count
+- Latest error
+- Mount and Unmount actions
+- Recent logs in a refreshable log drawer
 
-The first version uses server rendering or a small vanilla TypeScript/JavaScript bundle. State initially refreshes every two to five seconds, while logs use SSE. State SSE can be added later. Secrets are never sent to the DOM.
+The UI is a small embedded HTML/CSS/JavaScript page. State refreshes every few
+seconds and logs refresh on demand. Secrets are never sent to the DOM.
 
 ## 15. Security and Permissions
 
