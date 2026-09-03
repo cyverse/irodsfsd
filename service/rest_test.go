@@ -116,7 +116,7 @@ func TestRESTHealthEndpoints(t *testing.T) {
 func TestServiceStartsRESTAndGRPCListeners(t *testing.T) {
 	config := commons.NewDefaultConfig()
 	config.ServiceEndpoint = "tcp://127.0.0.1:13020"
-	config.ServicePort = 13021
+	config.ManagementServicePort = 13021
 	svc, err := newService(config, newFakeMountOperations())
 	if err != nil {
 		t.Fatal(err)

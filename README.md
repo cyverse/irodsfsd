@@ -10,8 +10,7 @@ about each mount.
 > **Status:** under active development. The core daemon — persistence,
 > startup reconciliation, retry/crash recovery, graceful shutdown, per-mount
 > logs, metrics, and the management UI — is implemented and tested. See
-> [`todo.md`](todo.md) for what is still open (hardening, packaging/CI, and
-> optional features) and [`design.md`](design.md) for the full design.
+> [`design.md`](design.md) for the full design.
 
 ## Features
 
@@ -56,14 +55,19 @@ or directly with Go:
 go build -o bin/irodsfsd ./cmd
 ```
 
-Run the test suite with `go test ./...` (add `-race` when touching
-`MountManager`'s concurrent code — see [`todo.md`](todo.md) for why a
-single run isn't enough evidence there).
+Run the test suite with `go test ./...`. Add `-race` when touching
+`MountManager`'s concurrent code.
+
+Reusable Go client code is available in [`client/`](client/). Runnable mount,
+unmount, and mount-list examples are documented in
+[`client_examples/README.md`](client_examples/README.md); build all three with
+`make build-client-examples`.
 
 ## Configuration
 
 `irodsfsd` accepts YAML or JSON (detected from content, not the file
-extension); unknown fields are rejected. See
+extension); unknown daemon-config fields are currently ignored for forward
+compatibility, while mount JSON is decoded strictly. See
 [`packaging/systemd/config.yaml`](packaging/systemd/config.yaml) for a
 complete annotated example, and design.md section 5 for the full field
 reference. The only field with no safe default is
@@ -78,7 +82,7 @@ Minimal example:
 
 ```yaml
 service_endpoint: "tcp://0.0.0.0:13020"
-service_port: 13021
+management_service_port: 13021
 irodsfs_executable_path: "/usr/local/bin/irodsfs"
 data_root_path: "/var/lib/irodsfsd"
 pid_file: "/run/irodsfsd/irodsfsd.pid"
@@ -171,5 +175,3 @@ packaging/systemd/   systemd unit and example configuration
 - [`design.md`](design.md) — full design: architecture, state machine,
   persistence, retry/recovery, API contract, security, and testing
   strategy.
-- [`todo.md`](todo.md) — remaining work, tracked against the design, with
-  notes on what's already implemented and verified.

@@ -41,7 +41,7 @@ type Config struct {
 	ReconcileInterval     Duration    `yaml:"reconcile_interval,omitempty" json:"reconcile_interval,omitempty"`
 	MaxConcurrentMounts   int         `yaml:"max_concurrent_mounts,omitempty" json:"max_concurrent_mounts,omitempty"`
 
-	ServicePort int `yaml:"service_port,omitempty" json:"service_port,omitempty"`
+	ManagementServicePort int `yaml:"management_service_port,omitempty" json:"management_service_port,omitempty"`
 
 	Debug         bool   `yaml:"debug,omitempty" json:"debug,omitempty"`
 	LogRootPath   string `yaml:"log_root_path,omitempty" json:"log_root_path,omitempty"`
@@ -71,7 +71,7 @@ func NewDefaultConfig() *Config {
 		ReconcileInterval:   Duration(ReconcileIntervalDefault),
 		MaxConcurrentMounts: MaxConcurrentMountsDefault,
 
-		ServicePort: ServicePortDefault,
+		ManagementServicePort: ManagementServicePortDefault,
 
 		Debug: false,
 
@@ -430,8 +430,8 @@ func (config *Config) Validate() error {
 	if config.MaxConcurrentMounts < 1 {
 		return errors.New("max_concurrent_mounts must be at least 1")
 	}
-	if config.ServicePort < 0 || config.ServicePort > 65535 {
-		return errors.New("service_port must be between 0 and 65535")
+	if config.ManagementServicePort < 0 || config.ManagementServicePort > 65535 {
+		return errors.New("management_service_port must be between 0 and 65535")
 	}
 
 	return nil

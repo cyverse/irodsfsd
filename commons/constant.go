@@ -28,5 +28,5 @@ const (
 
 	RecoveryEncryptionKeySizeDefault int = 32
 
-	ServicePortDefault int = 13021
+	ManagementServicePortDefault int = 13021
 )

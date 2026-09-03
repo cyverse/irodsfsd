@@ -28,4 +28,4 @@ davfs_unmount_timeout: 3m
 reconcile_interval: 10s
 max_concurrent_mounts: 40
 
-service_port: 13021
+management_service_port: 13021

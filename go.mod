@@ -6,10 +6,11 @@ require (
 	github.com/cockroachdb/errors v1.14.0
 	github.com/cyverse/go-daemonizer v0.2.0
 	github.com/cyverse/go-irodsclient v0.21.2
-	github.com/cyverse/irodsfs v0.12.5-0.20260901232233-835cb385bc58
-	github.com/cyverse/irodsfs-common v0.0.0-20260901221037-1e1575640683
+	github.com/cyverse/irodsfs v0.12.5-0.20260903185552-20fc102383fa
+	github.com/cyverse/irodsfs-common v0.0.0-20260903162056-c120cdd9c8d5
 	github.com/dgraph-io/badger/v3 v3.2103.5
 	github.com/prometheus/client_golang v1.24.1
+	github.com/rs/xid v1.3.0
 	github.com/sirupsen/logrus v1.10.2
 	github.com/spf13/cobra v1.10.1
 	google.golang.org/grpc v1.81.0
@@ -50,7 +51,6 @@ require (
 	github.com/prometheus/procfs v0.21.1 // indirect
 	github.com/redis/go-redis/v9 v9.22.0 // indirect
 	github.com/rogpeppe/go-internal v1.14.1 // indirect
-	github.com/rs/xid v1.3.0 // indirect
 	github.com/spf13/pflag v1.0.10 // indirect
 	github.com/stretchr/testify v1.12.1 // indirect
 	github.com/xeipuuv/gojsonpointer v0.0.0-20190905194746-02993c407bfb // indirect

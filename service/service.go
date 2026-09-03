@@ -137,8 +137,8 @@ func (svc *Service) Start() error {
 		return errors.Wrapf(err, "failed to listen on %s endpoint %q", scheme, endpoint)
 	}
 	var restListener net.Listener
-	if svc.config.ServicePort > 0 {
-		restEndpoint := fmt.Sprintf(":%d", svc.config.ServicePort)
+	if svc.config.ManagementServicePort > 0 {
+		restEndpoint := fmt.Sprintf(":%d", svc.config.ManagementServicePort)
 		restListener, err = svc.restListen("tcp", restEndpoint)
 		if err != nil {
 			_ = listener.Close()

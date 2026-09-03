@@ -53,7 +53,8 @@ file lock rejects the second instance, but all lifecycle operations should use
 
 Configuration may be written as YAML or JSON. The parser detects the format
 from the file content, so the path in `IRODSFSD_CONFIG` does not require a
-particular extension. Unknown fields and invalid values prevent startup.
+particular extension. Invalid values prevent startup; unknown daemon-config
+fields are currently ignored for forward compatibility.
 
 The `pid_file` value must remain `/run/irodsfsd/irodsfsd.pid` when using this
 unit because it must match systemd's `PIDFile` setting.

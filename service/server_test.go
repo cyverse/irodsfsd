@@ -92,7 +92,7 @@ func (manager *fakeMountOperations) Ready(_ context.Context) error {
 func TestGRPCMountService(t *testing.T) {
 	config := commons.NewDefaultConfig()
 	config.ServiceEndpoint = "tcp://127.0.0.1:0"
-	config.ServicePort = 0
+	config.ManagementServicePort = 0
 	svc, err := newService(config, newFakeMountOperations())
 	if err != nil {
 		t.Fatal(err)
@@ -185,7 +185,7 @@ func TestServiceRemovesUnixSocket(t *testing.T) {
 	socketPath := t.TempDir() + "/irodsfsd.sock"
 	config := commons.NewDefaultConfig()
 	config.ServiceEndpoint = "unix://" + socketPath
-	config.ServicePort = 0
+	config.ManagementServicePort = 0
 	svc, err := newService(config, newFakeMountOperations())
 	if err != nil {
 		t.Fatal(err)
