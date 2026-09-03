@@ -190,6 +190,7 @@ func TestMountManagerMountAndUnmount(t *testing.T) {
 	assertJSONValue(t, input, "readonly", true)
 	assertJSONValue(t, input, "foreground", true)
 	assertJSONValue(t, input, "instanceid", mountID)
+	assertJSONValue(t, input, "log_path", "-")
 	assertJSONValue(t, input, "read_ahead_max", float64(256))
 	assertJSONValue(t, input, "read_write_max", float64(128))
 	assertJSONValue(t, input, "description", "test mount")

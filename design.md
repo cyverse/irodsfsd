@@ -498,6 +498,12 @@ backups are retained on disk but are not included. A known-secret redaction
 filter provides defense in depth, while configuration and passwords are never
 placed on the command line. Live SSE streaming is not currently implemented.
 
+irodsfs is launched with `log_path: "-"`, disabling its own default log file
+under its data root (which would otherwise duplicate this same stream,
+unredacted, and disappear when the mount's data root is removed on unmount);
+irodsfs then logs to stderr only, which is exactly the stream irodsfsd
+captures and redacts above.
+
 The daemon audit log records API principal, action, mount ID/path, and result without passwords or complete configuration.
 
 ## 14. Web Monitoring

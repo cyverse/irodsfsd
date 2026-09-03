@@ -56,6 +56,12 @@ func makeIRODSFSConfigJSON(config *api.MountConfig, mountID string, dataRootPath
 	input.Debug = irodsfsConfig.Debug
 	input.InstanceID = mountID
 	input.Description = irodsfsConfig.GetDescription()
+	// irodsfs defaults to writing its own log file under DataRootPath,
+	// duplicating (unredacted) what it already writes to stderr, which
+	// irodsfsd separately captures and redacts into its own managed,
+	// queryable mount log. "-" disables irodsfs's own file and keeps it to
+	// stderr only, so there is exactly one, redacted copy of this log.
+	input.LogPath = "-"
 
 	input.PathMappings = make([]irodsfs_common_vpath.VPathMapping, 0, len(irodsfsConfig.PathMappings))
 	for _, mapping := range irodsfsConfig.PathMappings {
