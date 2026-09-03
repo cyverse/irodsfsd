@@ -33,13 +33,20 @@ type Config struct {
 
 	RecoveryEncryptionKey string `yaml:"recovery_encryption_key,omitempty" json:"recovery_encryption_key,omitempty"`
 
-	AllowedMountRootPaths []string    `yaml:"allowed_mount_root_paths,omitempty" json:"allowed_mount_root_paths,omitempty"`
-	Retry                 RetryConfig `yaml:"retry,omitempty" json:"retry,omitempty"`
-	MountTimeout          Duration    `yaml:"mount_timeout,omitempty" json:"mount_timeout,omitempty"`
-	UnmountTimeout        Duration    `yaml:"unmount_timeout,omitempty" json:"unmount_timeout,omitempty"`
-	DAVFSUnmountTimeout   Duration    `yaml:"davfs_unmount_timeout,omitempty" json:"davfs_unmount_timeout,omitempty"`
-	ReconcileInterval     Duration    `yaml:"reconcile_interval,omitempty" json:"reconcile_interval,omitempty"`
-	MaxConcurrentMounts   int         `yaml:"max_concurrent_mounts,omitempty" json:"max_concurrent_mounts,omitempty"`
+	AllowedMountRootPaths []string `yaml:"allowed_mount_root_paths,omitempty" json:"allowed_mount_root_paths,omitempty"`
+	// AllowFuseAllowOther is design.md's "daemon-wide policy" gate: a mount
+	// request may only ask for the FUSE allow_other option (irodsfs or
+	// DAVFS) when this is true. allow_other lets every local user on the
+	// host reach the mount, not just the irodsfsd service account that
+	// actually performed it, so it must be an explicit, host-level opt-in
+	// rather than something any mount request can request on its own.
+	AllowFuseAllowOther bool        `yaml:"allow_fuse_allow_other,omitempty" json:"allow_fuse_allow_other,omitempty"`
+	Retry               RetryConfig `yaml:"retry,omitempty" json:"retry,omitempty"`
+	MountTimeout        Duration    `yaml:"mount_timeout,omitempty" json:"mount_timeout,omitempty"`
+	UnmountTimeout      Duration    `yaml:"unmount_timeout,omitempty" json:"unmount_timeout,omitempty"`
+	DAVFSUnmountTimeout Duration    `yaml:"davfs_unmount_timeout,omitempty" json:"davfs_unmount_timeout,omitempty"`
+	ReconcileInterval   Duration    `yaml:"reconcile_interval,omitempty" json:"reconcile_interval,omitempty"`
+	MaxConcurrentMounts int         `yaml:"max_concurrent_mounts,omitempty" json:"max_concurrent_mounts,omitempty"`
 
 	ManagementServicePort int `yaml:"management_service_port,omitempty" json:"management_service_port,omitempty"`
 
@@ -58,6 +65,7 @@ func NewDefaultConfig() *Config {
 		PIDFile:               PIDFilePathDefault,
 
 		AllowedMountRootPaths: []string{AllowedMountRootPathDefault, KubeletMountRootPathDefault},
+		AllowFuseAllowOther:   false,
 		Retry: RetryConfig{
 			MaxAttempts:  RetryMaxAttemptsDefault,
 			InitialDelay: Duration(RetryInitialDelayDefault),

@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"slices"
 	"strings"
 	"sync"
 	"testing"
@@ -39,11 +40,13 @@ func newTestRepository(t *testing.T) *store.MountRepository {
 }
 
 type fakeFuseController struct {
-	mutex        sync.Mutex
-	checkCalls   []bool
-	checkErr     error
-	unmountPaths []string
-	unmountErr   error
+	mutex            sync.Mutex
+	checkCalls       []bool
+	checkErr         error
+	allowOtherCalls  int
+	allowOtherErr    error
+	unmountPaths     []string
+	unmountErr       error
 }
 
 func (controller *fakeFuseController) Check(checkFusermount bool) error {
@@ -51,6 +54,13 @@ func (controller *fakeFuseController) Check(checkFusermount bool) error {
 	defer controller.mutex.Unlock()
 	controller.checkCalls = append(controller.checkCalls, checkFusermount)
 	return controller.checkErr
+}
+
+func (controller *fakeFuseController) CheckAllowOther() error {
+	controller.mutex.Lock()
+	defer controller.mutex.Unlock()
+	controller.allowOtherCalls++
+	return controller.allowOtherErr
 }
 
 func (controller *fakeFuseController) Unmount(mountPath string) error {
@@ -78,6 +88,7 @@ func TestMountManagerMountAndUnmount(t *testing.T) {
 	daemonConfig.MountRootPath = filepath.Join(tempDir, "data")
 	daemonConfig.LogRootPath = filepath.Join(tempDir, "logs")
 	daemonConfig.AllowedMountRootPaths = []string{tempDir}
+	daemonConfig.AllowFuseAllowOther = true
 	daemonConfig.MountTimeout = commons.Duration(time.Second)
 	daemonConfig.UnmountTimeout = commons.Duration(3 * time.Second)
 
@@ -98,7 +109,7 @@ func TestMountManagerMountAndUnmount(t *testing.T) {
 		Config: &api.MountConfig{
 			MountPath:    mountPath,
 			ReadOnly:     true,
-			MountOptions: []string{"allow_other"},
+			MountOptions: []string{"allow_other", "default_permissions"},
 			ClientConfig: &api.MountConfig_Irodsfs{Irodsfs: &api.IRODSFSConfig{
 				Account: &api.Account{
 					IrodsAuthenticationScheme:    stringPointer("native"),
@@ -182,7 +193,7 @@ func TestMountManagerMountAndUnmount(t *testing.T) {
 	assertJSONValue(t, input, "read_ahead_max", float64(256))
 	assertJSONValue(t, input, "read_write_max", float64(128))
 	assertJSONValue(t, input, "description", "test mount")
-	if got, want := input["fuse_options"], []any{"allow_other", "direct_io"}; !reflect.DeepEqual(got, want) {
+	if got, want := input["fuse_options"], []any{"allow_other", "default_permissions", "direct_io"}; !reflect.DeepEqual(got, want) {
 		t.Errorf("fuse_options = %#v, want %#v", got, want)
 	}
 	metadataConnection, ok := input["metadata_connection"].(map[string]any)
@@ -2047,5 +2058,214 @@ func TestValidateMountConfigAllowsPathThroughSymlinkedAllowedRoot(t *testing.T) 
 
 	if err := manager.validateMountConfig(newTestIRODSFSMountConfig(mountPath)); err != nil {
 		t.Errorf("validateMountConfig() error = %v, want a path under the symlinked allowed root's real target to be allowed", err)
+	}
+}
+
+func TestValidateMountConfigRejectsAllowOtherWhenPolicyDisabled(t *testing.T) {
+	tempDir := t.TempDir()
+	manager := newTestManagerForPathValidation(t, tempDir, []string{tempDir})
+
+	config := newTestIRODSFSMountConfig(filepath.Join(tempDir, "mount"))
+	config.MountOptions = []string{"allow_other", "default_permissions"}
+
+	err := manager.validateMountConfig(config)
+	if err == nil {
+		t.Fatal("validateMountConfig() error = nil, want allow_other rejected when daemon policy is disabled")
+	}
+}
+
+func TestValidateMountConfigRejectsAllowOtherForNFS(t *testing.T) {
+	tempDir := t.TempDir()
+	manager := newTestManagerForPathValidation(t, tempDir, []string{tempDir})
+	manager.config.AllowFuseAllowOther = true
+
+	config := &api.MountConfig{
+		MountPath:    filepath.Join(tempDir, "mount"),
+		MountOptions: []string{"allow_other", "default_permissions"},
+		ClientConfig: &api.MountConfig_Nfs{Nfs: &api.NFSConfig{
+			Host: "nfs.example.org",
+			Path: "/export",
+		}},
+	}
+
+	err := manager.validateMountConfig(config)
+	if err == nil {
+		t.Fatal("validateMountConfig() error = nil, want allow_other rejected for NFS mounts")
+	}
+}
+
+func TestValidateMountConfigAllowsAllowOtherWhenPolicyEnabledWithDefaultPermissions(t *testing.T) {
+	tempDir := t.TempDir()
+	manager := newTestManagerForPathValidation(t, tempDir, []string{tempDir})
+	manager.config.AllowFuseAllowOther = true
+
+	config := newTestIRODSFSMountConfig(filepath.Join(tempDir, "mount"))
+	config.GetIrodsfs().FuseOptions = []string{"allow_other", "default_permissions"}
+
+	if err := manager.validateMountConfig(config); err != nil {
+		t.Errorf("validateMountConfig() error = %v, want allow_other accepted with policy enabled and default_permissions set", err)
+	}
+}
+
+func TestMountAppliesFuseAllowOtherPolicyRegardlessOfRequest(t *testing.T) {
+	tempDir := t.TempDir()
+	executablePath := makeFakeIRODSFS(t, tempDir, filepath.Join(tempDir, "stdin"), filepath.Join(tempDir, "args"), false)
+	mountPath := filepath.Join(tempDir, "mount")
+	if err := os.MkdirAll(mountPath, 0o755); err != nil {
+		t.Fatal(err)
+	}
+
+	daemonConfig := commons.NewDefaultConfig()
+	daemonConfig.IRODSFSExecutablePath = executablePath
+	daemonConfig.MountRootPath = filepath.Join(tempDir, "data")
+	daemonConfig.LogRootPath = filepath.Join(tempDir, "logs")
+	daemonConfig.AllowedMountRootPaths = []string{tempDir}
+	daemonConfig.AllowFuseAllowOther = true
+
+	manager, err := newMountManager(daemonConfig, &fakeFuseController{}, func(string) (bool, error) {
+		return true, nil
+	}, time.Now, newTestRepository(t))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	response, err := manager.Mount(context.Background(), &api.MountRequest{
+		Config: newTestIRODSFSMountConfig(mountPath),
+	})
+	if err != nil {
+		t.Fatalf("Mount() error = %v", err)
+	}
+	if !slices.Contains(response.Config.MountOptions, "allow_other") {
+		t.Errorf("Mount() response MountOptions = %v, want it to contain %q even though the client never requested it", response.Config.MountOptions, "allow_other")
+	}
+	if slices.Contains(response.Config.MountOptions, "default_permissions") {
+		t.Errorf("Mount() response MountOptions = %v, want default_permissions NOT auto-added (the reported UID/GID cannot be trusted for kernel-level permission checks)", response.Config.MountOptions)
+	}
+	if _, err := manager.Unmount(context.Background(), &api.UnmountRequest{MountId: response.MountId}); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestApplyFuseAllowOtherPolicyForcesAllowOtherOnlyRegardlessOfRequest(t *testing.T) {
+	tempDir := t.TempDir()
+	manager := newTestManagerForPathValidation(t, tempDir, []string{tempDir})
+	manager.config.AllowFuseAllowOther = true
+
+	config := newTestIRODSFSMountConfig(filepath.Join(tempDir, "mount"))
+	manager.applyFuseAllowOtherPolicy(config)
+
+	want := []string{"allow_other"}
+	if !reflect.DeepEqual(config.MountOptions, want) {
+		t.Errorf("MountOptions = %v, want %v (allow_other forced on, default_permissions never auto-added)", config.MountOptions, want)
+	}
+}
+
+func TestApplyFuseAllowOtherPolicyDoesNotDuplicateRequestedOptions(t *testing.T) {
+	tempDir := t.TempDir()
+	manager := newTestManagerForPathValidation(t, tempDir, []string{tempDir})
+	manager.config.AllowFuseAllowOther = true
+
+	config := newTestIRODSFSMountConfig(filepath.Join(tempDir, "mount"))
+	config.MountOptions = []string{"allow_other"}
+	manager.applyFuseAllowOtherPolicy(config)
+
+	want := []string{"allow_other"}
+	if !reflect.DeepEqual(config.MountOptions, want) {
+		t.Errorf("MountOptions = %v, want %v with no duplicate allow_other", config.MountOptions, want)
+	}
+}
+
+func TestApplyFuseAllowOtherPolicyPreservesClientRequestedDefaultPermissions(t *testing.T) {
+	tempDir := t.TempDir()
+	manager := newTestManagerForPathValidation(t, tempDir, []string{tempDir})
+	manager.config.AllowFuseAllowOther = true
+
+	config := newTestIRODSFSMountConfig(filepath.Join(tempDir, "mount"))
+	config.MountOptions = []string{"default_permissions"}
+	manager.applyFuseAllowOtherPolicy(config)
+
+	want := []string{"default_permissions", "allow_other"}
+	if !reflect.DeepEqual(config.MountOptions, want) {
+		t.Errorf("MountOptions = %v, want %v: an operator who explicitly opts into default_permissions themselves is still free to", config.MountOptions, want)
+	}
+}
+
+func TestApplyFuseAllowOtherPolicyIsNoOpWhenPolicyDisabled(t *testing.T) {
+	tempDir := t.TempDir()
+	manager := newTestManagerForPathValidation(t, tempDir, []string{tempDir})
+
+	config := newTestIRODSFSMountConfig(filepath.Join(tempDir, "mount"))
+	manager.applyFuseAllowOtherPolicy(config)
+
+	if len(config.MountOptions) != 0 {
+		t.Errorf("MountOptions = %v, want unchanged when daemon policy is disabled", config.MountOptions)
+	}
+}
+
+func TestApplyFuseAllowOtherPolicyIsNoOpForNFS(t *testing.T) {
+	tempDir := t.TempDir()
+	manager := newTestManagerForPathValidation(t, tempDir, []string{tempDir})
+	manager.config.AllowFuseAllowOther = true
+
+	config := &api.MountConfig{
+		MountPath: filepath.Join(tempDir, "mount"),
+		ClientConfig: &api.MountConfig_Nfs{Nfs: &api.NFSConfig{
+			Host: "nfs.example.org",
+			Path: "/export",
+		}},
+	}
+	manager.applyFuseAllowOtherPolicy(config)
+
+	if len(config.MountOptions) != 0 {
+		t.Errorf("MountOptions = %v, want unchanged for NFS mounts", config.MountOptions)
+	}
+}
+
+func TestNewMountManagerRejectsAllowFuseAllowOtherWhenSystemNotConfigured(t *testing.T) {
+	tempDir := t.TempDir()
+	executablePath := makeFakeIRODSFS(t, tempDir, filepath.Join(tempDir, "stdin"), filepath.Join(tempDir, "args"), false)
+	config := commons.NewDefaultConfig()
+	config.IRODSFSExecutablePath = executablePath
+	config.MountRootPath = filepath.Join(tempDir, "data")
+	config.LogRootPath = filepath.Join(tempDir, "logs")
+	config.AllowFuseAllowOther = true
+
+	fuse := &fakeFuseController{allowOtherErr: errors.New("user_allow_other is not set")}
+	_, err := newMountManager(config, fuse, func(string) (bool, error) {
+		return false, nil
+	}, time.Now, newTestRepository(t))
+	if err == nil {
+		t.Fatal("newMountManager() error = nil, want it to fail when the system is not configured for allow_other")
+	}
+	if fuse.allowOtherCalls != 1 {
+		t.Errorf("CheckAllowOther calls = %d, want 1", fuse.allowOtherCalls)
+	}
+}
+
+func TestCheckUserAllowOtherEnabled(t *testing.T) {
+	if os.Geteuid() == 0 {
+		t.Skip("root may always use allow_other regardless of user_allow_other")
+	}
+	tempDir := t.TempDir()
+
+	missing := filepath.Join(tempDir, "missing.conf")
+	if err := checkUserAllowOtherEnabled(missing); err == nil {
+		t.Error("checkUserAllowOtherEnabled() error = nil, want an error when fuse.conf does not exist")
+	}
+
+	commentedOut := filepath.Join(tempDir, "commented.conf")
+	if err := os.WriteFile(commentedOut, []byte("# user_allow_other\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := checkUserAllowOtherEnabled(commentedOut); err == nil {
+		t.Error("checkUserAllowOtherEnabled() error = nil, want an error when user_allow_other is commented out")
+	}
+
+	enabled := filepath.Join(tempDir, "enabled.conf")
+	if err := os.WriteFile(enabled, []byte("# /etc/fuse.conf\nuser_allow_other\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := checkUserAllowOtherEnabled(enabled); err != nil {
+		t.Errorf("checkUserAllowOtherEnabled() error = %v, want nil when user_allow_other is set", err)
 	}
 }

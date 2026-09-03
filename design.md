@@ -111,6 +111,7 @@ debug: false
 allowed_mount_root_paths:
   - "/mnt/irods"
   - "/var/lib/kubelet"
+allow_fuse_allow_other: false
 
 retry:
   max_attempts: 5
@@ -141,6 +142,44 @@ paths requested through the API. `/var/lib/kubelet` is allowed by default for
 CSI node staging and publishing paths. The daemon log file is
 `<log_root_path>/irodsfsd.log`, and the daemon working directory is
 `data_root_path`.
+
+`allow_fuse_allow_other` is the daemon-wide policy gate for the FUSE
+`allow_other` mount option (irodsfs and DAVFS). It defaults to `false`
+(restrictive by default). When `false`, any mount request that explicitly
+asks for `allow_other` (via `mount_options` or, for irodsfs, `fuse_options`)
+is rejected, and `allow_other` is never applicable to NFS mounts regardless
+of the policy setting. When `true`, the daemon forces `allow_other` onto
+every irodsfs and DAVFS mount's options, regardless of whether the client
+requested it; NFS mounts are left untouched, since NFS is not FUSE. Because
+irodsfsd runs under one service account distinct from the users who access
+the mounted volume, deployments where those users are different local
+accounts than the service account will generally need
+`allow_fuse_allow_other: true`.
+
+`allow_fuse_allow_other` deliberately does NOT also force `default_permissions`.
+The primary caller is irods-csi-driver: it sends the requesting container's
+own UID/GID with the mount request, but that UID/GID belongs to the
+container's own, unrelated account, with no mapping to any host identity —
+irodsfsd has no way to learn what, if anything, it corresponds to on the
+host. `default_permissions` would have the kernel check the *real* accessing
+process's host UID/GID against the file's reported owner; with an
+unmappable, essentially arbitrary reported owner, that check could just as
+easily deny the legitimate accessing process as anyone else. Access control
+therefore rests on `allow_other` (so the real, whatever-it-is, host UID can
+reach the mount at all) plus the CSI driver/Kubernetes scoping each mount to
+one workload's bind mount, not on kernel-enforced per-file ownership within
+the mount. A deployment where the caller's UID/GID *is* authoritative on the
+host may still request `default_permissions` explicitly in its mount
+request; the daemon only ever refrains from adding it automatically.
+
+Enabling `allow_fuse_allow_other` also requires the host's FUSE
+configuration to actually permit it: unless irodsfsd runs as root, the
+kernel FUSE module rejects `allow_other` from a non-root mounter unless
+`user_allow_other` is uncommented in `/etc/fuse.conf`. The daemon checks
+this at startup and on every readiness check, and fails fast (rather than
+letting a later individual mount fail with a confusing kernel error) if
+`allow_fuse_allow_other: true` is configured but `user_allow_other` is not
+set.
 
 ## 6. Mount Model and State Machine
 
@@ -487,7 +526,7 @@ seconds and logs refresh on demand. Secrets are never sent to the DOM.
 - Canonicalize paths and inspect existing parent symlinks to prevent escape from an allowed root.
 - Build a child environment from an allowlist instead of inheriting unexpected proxy or iRODS variables.
 - Require data and runtime directories to be `0700` and verify PID/runtime ownership. Credential-bearing irodsfs configuration is sent only through child-process stdin.
-- Accept `allow_other` only when daemon-wide policy permits it.
+- Reject an explicit client request for `allow_other` unless daemon-wide policy permits it (`allow_fuse_allow_other: true`); when the policy is enabled, force `allow_other` onto every irodsfs/DAVFS mount regardless of the request. `allow_other` never applies to NFS mounts. Do not also auto-force `default_permissions`: the caller-supplied UID/GID (e.g. from irods-csi-driver) is a container-local identity unmapped to any host account, so kernel-enforced owner-based checks against it cannot be trusted to admit the legitimate accessing process; a caller that knows its UID/GID is host-authoritative may still request `default_permissions` itself. Fail daemon startup and readiness checks if the policy is enabled but the host's `/etc/fuse.conf` does not have `user_allow_other` set (unless running as root).
 - Apply request rate limits and audit logging.
 - Record the request source address separately from the iRODS user used by a mount.
 

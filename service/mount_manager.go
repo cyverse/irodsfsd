@@ -10,6 +10,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"slices"
 	"sort"
 	"strings"
 	"sync"
@@ -44,6 +45,7 @@ var (
 
 type fuseController interface {
 	Check(bool) error
+	CheckAllowOther() error
 	Unmount(string) error
 }
 
@@ -53,8 +55,42 @@ func (systemFuseController) Check(checkFusermount bool) error {
 	return irodsfs_commons.CheckFuse(checkFusermount)
 }
 
+func (systemFuseController) CheckAllowOther() error {
+	return checkUserAllowOtherEnabled(fuseConfPath)
+}
+
 func (systemFuseController) Unmount(mountPath string) error {
 	return irodsfs_commons.UnmountFuse(mountPath)
+}
+
+// fuseConfPath is FUSE's system-wide configuration file.
+const fuseConfPath = "/etc/fuse.conf"
+
+// checkUserAllowOtherEnabled verifies the host actually permits allow_other
+// before the daemon accepts config.AllowFuseAllowOther: a mount that
+// requests allow_other while the kernel FUSE module rejects it would fail
+// at mount time with a confusing error, so this fails fast at startup (and
+// on every Ready check) instead. A root process may always use allow_other;
+// a non-root process — the expected irodsfsd deployment, since it runs as a
+// dedicated service account distinct from the mount's end users — may only
+// do so once user_allow_other is uncommented in path.
+func checkUserAllowOtherEnabled(path string) error {
+	if os.Geteuid() == 0 {
+		return nil
+	}
+	data, err := os.ReadFile(path)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return errors.Errorf("allow_fuse_allow_other requires user_allow_other to be set in %q, but the file does not exist", path)
+		}
+		return errors.Wrapf(err, "failed to read %q", path)
+	}
+	for _, line := range strings.Split(string(data), "\n") {
+		if strings.TrimSpace(line) == "user_allow_other" {
+			return nil
+		}
+	}
+	return errors.Errorf("allow_fuse_allow_other requires user_allow_other to be set in %q", path)
 }
 
 type mountProbe func(string) (bool, error)
@@ -148,6 +184,11 @@ func newMountManager(config *irodsfsd_commons.Config, fuse fuseController, probe
 	}
 	if err := validateExecutable(config.UnmountExecutablePath); err != nil {
 		return nil, err
+	}
+	if config.AllowFuseAllowOther {
+		if err := fuse.CheckAllowOther(); err != nil {
+			return nil, errors.Wrap(err, "allow_fuse_allow_other is enabled but the system is not configured for it")
+		}
 	}
 
 	return &MountManager{
@@ -309,6 +350,7 @@ func (manager *MountManager) Mount(ctx context.Context, request *api.MountReques
 	storedConfig := proto.Clone(request.Config).(*api.MountConfig)
 	mountPath := filepath.Clean(storedConfig.MountPath)
 	storedConfig.MountPath = mountPath
+	manager.applyFuseAllowOtherPolicy(storedConfig)
 	dataRootPath := filepath.Join(manager.config.GetMountRootPath(), mountID)
 	now := manager.now()
 	entry := &managedMount{
@@ -628,6 +670,11 @@ func (manager *MountManager) Ready(ctx context.Context) error {
 	}
 	if err := validateExecutable(manager.config.UnmountExecutablePath); err != nil {
 		return err
+	}
+	if manager.config.AllowFuseAllowOther {
+		if err := manager.fuse.CheckAllowOther(); err != nil {
+			return errors.Wrap(err, "allow_fuse_allow_other is enabled but the system is not configured for it")
+		}
 	}
 	return nil
 }
@@ -1381,6 +1428,9 @@ func (manager *MountManager) validateMountConfig(config *api.MountConfig) error 
 			return err
 		}
 	}
+	if err := validateFuseAllowOtherPolicy(manager.config.AllowFuseAllowOther, client, config); err != nil {
+		return err
+	}
 	if config.MountPath == "" || !filepath.IsAbs(config.MountPath) {
 		return errors.New("mount path must be absolute")
 	}
@@ -1422,6 +1472,64 @@ func (manager *MountManager) validateMountConfig(config *api.MountConfig) error 
 		return errors.Errorf("mount path %q is not a directory", config.MountPath)
 	}
 	return nil
+}
+
+// validateFuseAllowOtherPolicy enforces design.md's daemon-wide policy gate
+// for the FUSE allow_other option: a client may not request it unless the
+// daemon operator has explicitly opted in via allowPolicy, and it is never
+// applicable to NFS mounts (which are not FUSE and are not subject to the
+// mounting-uid access restriction allow_other relaxes). When allowPolicy is
+// enabled, applyFuseAllowOtherPolicy forces allow_other onto every eligible
+// mount regardless of what the client asked for, so this only ever rejects
+// an explicit client request that the policy cannot honor.
+func validateFuseAllowOtherPolicy(allowPolicy bool, client mountClientType, config *api.MountConfig) error {
+	options := append([]string(nil), config.MountOptions...)
+	if client == mountClientIRODSFS {
+		options = append(options, config.GetIrodsfs().GetFuseOptions()...)
+	}
+	if !slices.Contains(options, "allow_other") {
+		return nil
+	}
+	if client == mountClientNFS {
+		return errors.New("allow_other is not applicable to NFS mounts")
+	}
+	if !allowPolicy {
+		return errors.New("allow_other is not permitted by daemon policy")
+	}
+	return nil
+}
+
+// applyFuseAllowOtherPolicy forces allow_other onto config.MountOptions for
+// every FUSE-capable mount (irodsfs, DAVFS) when the daemon-wide policy is
+// enabled, regardless of whether the client requested it. It deliberately
+// does NOT also force default_permissions: default_permissions has the
+// kernel check the accessing process's real UID/GID against the file's
+// reported owner, but the UID/GID irodsfsd receives from a caller such as
+// irods-csi-driver is the container's own, unmapped to any host identity
+// (the container runs under a completely different, unrelated account with
+// no mapping to the host) — the kernel would be comparing against a
+// meaningless number and could reject the very process the mount is for.
+// With no plan to reconcile that mapping, per-file owner-based enforcement
+// within the mount is not viable here: access control instead rests on
+// allow_other (so the real, whatever-it-is host UID can reach the mount at
+// all) plus the CSI driver/Kubernetes scoping each mount to one workload.
+// An operator whose deployment does not have this mismatch (host UIDs are
+// authoritative for the accessing process) may still request
+// default_permissions explicitly; it is only never added automatically.
+// It is a no-op for NFS, which is not FUSE. config must already have passed
+// validateMountConfig (so its client type is known-valid) before this is
+// called.
+func (manager *MountManager) applyFuseAllowOtherPolicy(config *api.MountConfig) {
+	if !manager.config.AllowFuseAllowOther {
+		return
+	}
+	client, err := clientType(config)
+	if err != nil || client == mountClientNFS {
+		return
+	}
+	if !slices.Contains(config.MountOptions, "allow_other") {
+		config.MountOptions = append(config.MountOptions, "allow_other")
+	}
 }
 
 // canonicalizePath resolves path to its real, symlink-free form. path need

@@ -92,6 +92,17 @@ allowed_mount_root_paths:
   - "/mnt/irods"
 ```
 
+Set `allow_fuse_allow_other: true` when the mount's end users are different
+local accounts than the service account irodsfsd runs as. The daemon then
+forces `allow_other` onto every irodsfs/DAVFS mount automatically (it does
+not apply to NFS mounts), and refuses to start unless the host's
+`/etc/fuse.conf` has `user_allow_other` set (skipped when running as root).
+It does not also force `default_permissions`: a caller such as
+irods-csi-driver supplies the container's own UID/GID, which has no mapping
+to any host account, so kernel-enforced ownership checks against it can't be
+trusted — a caller may still request `default_permissions` itself if its
+UID/GID is host-authoritative. See `design.md` section 5 for details.
+
 ## Running
 
 ```sh
