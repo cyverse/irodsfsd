@@ -71,10 +71,7 @@ func TestMountManagerMountAndUnmount(t *testing.T) {
 	stdinPath := filepath.Join(tempDir, "stdin.json")
 	argsPath := filepath.Join(tempDir, "args.txt")
 	executablePath := makeFakeIRODSFS(t, tempDir, stdinPath, argsPath, false)
-	mountPath := filepath.Join(tempDir, "mount")
-	if err := os.Mkdir(mountPath, 0o755); err != nil {
-		t.Fatal(err)
-	}
+	mountPath := filepath.Join(tempDir, "missing", "mount")
 
 	daemonConfig := commons.NewDefaultConfig()
 	daemonConfig.IRODSFSExecutablePath = executablePath
@@ -147,6 +144,11 @@ func TestMountManagerMountAndUnmount(t *testing.T) {
 	}
 	if response.MountId != mountID {
 		t.Errorf("Mount ID = %q, want %q", response.MountId, mountID)
+	}
+	if info, statErr := os.Stat(mountPath); statErr != nil {
+		t.Fatalf("created mount path: %v", statErr)
+	} else if !info.IsDir() {
+		t.Fatalf("created mount path %q is not a directory", mountPath)
 	}
 	assertRedacted(t, response.Config.GetIrodsfs().Account)
 

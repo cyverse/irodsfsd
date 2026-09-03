@@ -374,6 +374,12 @@ func (manager *MountManager) Mount(ctx context.Context, request *api.MountReques
 // via defer; Reconcile's and retryMount's callers do the same). generation
 // must be entry's current generation as of the moment this attempt began.
 func (manager *MountManager) startMount(entry *managedMount, generation uint64, dataRootPath string, mountDeadline time.Time) (*api.MountInfo, error) {
+	mountPath := entry.info.GetConfig().GetMountPath()
+	if err := os.MkdirAll(mountPath, 0o755); err != nil {
+		startErr := errors.Wrapf(err, "failed to create mount directory %q", mountPath)
+		manager.finishMountStartFailure(entry, generation, "MOUNT_DIRECTORY_FAILED", startErr.Error())
+		return manager.snapshot(entry), startErr
+	}
 	if err := os.MkdirAll(dataRootPath, 0o700); err != nil {
 		startErr := errors.Wrapf(err, "failed to create mount data directory %q", dataRootPath)
 		manager.finishMountStartFailure(entry, generation, "MOUNT_DATA_DIRECTORY_FAILED", startErr.Error())
@@ -1378,18 +1384,21 @@ func (manager *MountManager) validateMountConfig(config *api.MountConfig) error 
 	if config.MountPath == "" || !filepath.IsAbs(config.MountPath) {
 		return errors.New("mount path must be absolute")
 	}
-	info, err := os.Stat(config.MountPath)
-	if err != nil {
-		return errors.Wrapf(err, "invalid mount path %q", config.MountPath)
-	}
-	if !info.IsDir() {
-		return errors.Errorf("mount path %q is not a directory", config.MountPath)
-	}
 	if len(manager.config.AllowedMountRootPaths) > 0 && !pathWithinAnyRoot(config.MountPath, manager.config.AllowedMountRootPaths) {
 		return errors.Errorf("mount path %q is outside allowed mount roots", config.MountPath)
 	}
 	if conflict := manager.reservedPathConflict(config.MountPath); conflict != "" {
 		return errors.Errorf("mount path %q conflicts with the daemon's own reserved path %q", config.MountPath, conflict)
+	}
+	info, err := os.Stat(config.MountPath)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil
+		}
+		return errors.Wrapf(err, "invalid mount path %q", config.MountPath)
+	}
+	if !info.IsDir() {
+		return errors.Errorf("mount path %q is not a directory", config.MountPath)
 	}
 	return nil
 }
