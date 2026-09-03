@@ -1384,10 +1384,31 @@ func (manager *MountManager) validateMountConfig(config *api.MountConfig) error 
 	if config.MountPath == "" || !filepath.IsAbs(config.MountPath) {
 		return errors.New("mount path must be absolute")
 	}
-	if len(manager.config.AllowedMountRootPaths) > 0 && !pathWithinAnyRoot(config.MountPath, manager.config.AllowedMountRootPaths) {
-		return errors.Errorf("mount path %q is outside allowed mount roots", config.MountPath)
+
+	// Resolve symlinks (including in not-yet-created parent directories)
+	// before checking allowed roots or reserved paths: comparing the raw,
+	// unresolved string would let a symlink anywhere in the mount path's
+	// ancestry make it appear to be inside an allowed root, or outside a
+	// reserved one, when the real location it resolves to is not.
+	canonicalMountPath, err := canonicalizePath(config.MountPath)
+	if err != nil {
+		return errors.Wrapf(err, "failed to resolve mount path %q", config.MountPath)
 	}
-	if conflict := manager.reservedPathConflict(config.MountPath); conflict != "" {
+
+	if len(manager.config.AllowedMountRootPaths) > 0 {
+		canonicalRoots := make([]string, 0, len(manager.config.AllowedMountRootPaths))
+		for _, root := range manager.config.AllowedMountRootPaths {
+			canonicalRoot, err := canonicalizePath(root)
+			if err != nil {
+				continue // an allowed root that cannot be resolved at all can never match
+			}
+			canonicalRoots = append(canonicalRoots, canonicalRoot)
+		}
+		if !pathWithinAnyRoot(canonicalMountPath, canonicalRoots) {
+			return errors.Errorf("mount path %q is outside allowed mount roots", config.MountPath)
+		}
+	}
+	if conflict := manager.reservedPathConflict(canonicalMountPath); conflict != "" {
 		return errors.Errorf("mount path %q conflicts with the daemon's own reserved path %q", config.MountPath, conflict)
 	}
 	info, err := os.Stat(config.MountPath)
@@ -1403,6 +1424,28 @@ func (manager *MountManager) validateMountConfig(config *api.MountConfig) error 
 	return nil
 }
 
+// canonicalizePath resolves path to its real, symlink-free form. path need
+// not exist yet (a mount path may still be auto-created): canonicalizePath
+// walks up to the nearest existing ancestor, resolves that ancestor's
+// symlinks, and reattaches the remaining, not-yet-created suffix
+// components unchanged, exactly as design.md's "inspect existing parent
+// symlinks" requires.
+func canonicalizePath(path string) (string, error) {
+	path = filepath.Clean(path)
+	if resolved, err := filepath.EvalSymlinks(path); err == nil {
+		return filepath.Clean(resolved), nil
+	}
+	parent := filepath.Dir(path)
+	if parent == path {
+		return "", errors.Errorf("failed to resolve path %q", path)
+	}
+	resolvedParent, err := canonicalizePath(parent)
+	if err != nil {
+		return "", err
+	}
+	return filepath.Join(resolvedParent, filepath.Base(path)), nil
+}
+
 func pathWithinAnyRoot(target string, roots []string) bool {
 	target = filepath.Clean(target)
 	for _, root := range roots {
@@ -1415,12 +1458,12 @@ func pathWithinAnyRoot(target string, roots []string) bool {
 	return false
 }
 
-// reservedPathConflict returns the first reserved daemon path that target
-// conflicts with (target equals it, is its ancestor, or is its
-// descendant), or "" if there is no conflict. This is checked independent
-// of AllowedMountRootPaths: an operator could otherwise configure an
-// allowed root that happens to contain the daemon's own data, log, or
-// runtime directories.
+// reservedPathConflict returns the first reserved daemon path that the
+// already-canonicalized target conflicts with (target equals it, is its
+// ancestor, or is its descendant), or "" if there is no conflict. This is
+// checked independent of AllowedMountRootPaths: an operator could
+// otherwise configure an allowed root that happens to contain the
+// daemon's own data, log, or runtime directories.
 func (manager *MountManager) reservedPathConflict(target string) string {
 	// The filesystem root is a special case, checked for exact equality
 	// only: every absolute path is trivially "within" root, so treating it
@@ -1441,8 +1484,12 @@ func (manager *MountManager) reservedPathConflict(target string) string {
 		if path == "" {
 			continue
 		}
-		if pathsConflict(target, path) {
-			return filepath.Clean(path)
+		canonicalReserved, err := canonicalizePath(path)
+		if err != nil {
+			canonicalReserved = filepath.Clean(path)
+		}
+		if pathsConflict(target, canonicalReserved) {
+			return canonicalReserved
 		}
 	}
 	return ""

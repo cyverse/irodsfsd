@@ -1960,3 +1960,92 @@ func TestMountRejectsPathsConflictingWithReservedDaemonPaths(t *testing.T) {
 		t.Fatal(err)
 	}
 }
+
+func newTestManagerForPathValidation(t *testing.T, tempDir string, allowedRoots []string) *MountManager {
+	t.Helper()
+	executablePath := makeFakeIRODSFS(t, tempDir, filepath.Join(tempDir, "stdin"), filepath.Join(tempDir, "args"), false)
+	config := commons.NewDefaultConfig()
+	config.IRODSFSExecutablePath = executablePath
+	config.MountRootPath = filepath.Join(tempDir, "data")
+	config.LogRootPath = filepath.Join(tempDir, "logs")
+	config.AllowedMountRootPaths = allowedRoots
+	manager, err := newMountManager(config, &fakeFuseController{}, func(string) (bool, error) {
+		return false, nil
+	}, time.Now, newTestRepository(t))
+	if err != nil {
+		t.Fatal(err)
+	}
+	return manager
+}
+
+func TestValidateMountConfigRejectsSymlinkEscapeFromAllowedRoot(t *testing.T) {
+	tempDir := t.TempDir()
+	allowedRoot := filepath.Join(tempDir, "allowed")
+	outside := filepath.Join(tempDir, "outside")
+	if err := os.MkdirAll(allowedRoot, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.MkdirAll(outside, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	escape := filepath.Join(allowedRoot, "escape")
+	if err := os.Symlink(outside, escape); err != nil {
+		t.Fatal(err)
+	}
+
+	manager := newTestManagerForPathValidation(t, tempDir, []string{allowedRoot})
+
+	err := manager.validateMountConfig(newTestIRODSFSMountConfig(escape))
+	if err == nil {
+		t.Fatal("validateMountConfig() error = nil, want the symlink escape rejected")
+	}
+}
+
+func TestValidateMountConfigResolvesSymlinkInNotYetCreatedParent(t *testing.T) {
+	tempDir := t.TempDir()
+	allowedRoot := filepath.Join(tempDir, "allowed")
+	outside := filepath.Join(tempDir, "outside")
+	if err := os.MkdirAll(allowedRoot, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.MkdirAll(outside, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	linkedParent := filepath.Join(allowedRoot, "link")
+	if err := os.Symlink(outside, linkedParent); err != nil {
+		t.Fatal(err)
+	}
+	// notYetCreated does not exist yet: only its parent (the symlink) does.
+	notYetCreated := filepath.Join(linkedParent, "newmount")
+
+	manager := newTestManagerForPathValidation(t, tempDir, []string{allowedRoot})
+
+	err := manager.validateMountConfig(newTestIRODSFSMountConfig(notYetCreated))
+	if err == nil {
+		t.Fatal("validateMountConfig() error = nil, want the escape through a not-yet-created path's symlinked parent rejected")
+	}
+}
+
+func TestValidateMountConfigAllowsPathThroughSymlinkedAllowedRoot(t *testing.T) {
+	tempDir := t.TempDir()
+	realRoot := filepath.Join(tempDir, "real-root")
+	if err := os.MkdirAll(realRoot, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	symlinkedRoot := filepath.Join(tempDir, "allowed-symlink")
+	if err := os.Symlink(realRoot, symlinkedRoot); err != nil {
+		t.Fatal(err)
+	}
+	mountPath := filepath.Join(realRoot, "alice")
+	if err := os.MkdirAll(mountPath, 0o755); err != nil {
+		t.Fatal(err)
+	}
+
+	// The allowed root itself is configured as a symlink; a mount path
+	// reached through the real, resolved location must still be allowed.
+	manager := newTestManagerForPathValidation(t, tempDir, []string{symlinkedRoot})
+
+	if err := manager.validateMountConfig(newTestIRODSFSMountConfig(mountPath)); err != nil {
+		t.Errorf("validateMountConfig() error = %v, want a path under the symlinked allowed root's real target to be allowed", err)
+	}
+}
