@@ -2,8 +2,6 @@ package service
 
 import (
 	"context"
-	"crypto/rand"
-	"encoding/hex"
 	"fmt"
 	"math"
 	mathrand "math/rand"
@@ -23,6 +21,7 @@ import (
 	"github.com/cyverse/irodsfsd/service/api"
 	"github.com/cyverse/irodsfsd/service/logstore"
 	"github.com/cyverse/irodsfsd/service/store"
+	"github.com/rs/xid"
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -338,11 +337,7 @@ func (manager *MountManager) Mount(ctx context.Context, request *api.MountReques
 
 	mountID := request.GetMountId()
 	if mountID == "" {
-		var err error
-		mountID, err = newMountID()
-		if err != nil {
-			return nil, err
-		}
+		mountID = newMountID()
 	} else if err := validateMountID(mountID); err != nil {
 		return nil, err
 	}
@@ -1609,12 +1604,17 @@ func pathsConflict(a string, b string) bool {
 	return pathWithinAnyRoot(a, []string{b}) || pathWithinAnyRoot(b, []string{a})
 }
 
+// validateMountID sanity-checks a client-supplied mount ID before it is used
+// as a single filesystem path segment (mount data/log directories are all
+// filepath.Join(root, mountID)). "." is excluded from the character set
+// because, as a standalone path segment, "." and ".." carry special
+// filesystem meaning (self-reference and parent-directory escape).
 func validateMountID(mountID string) error {
 	if len(mountID) > 128 {
 		return errors.New("mount ID must not exceed 128 characters")
 	}
 	for _, character := range mountID {
-		if character >= 'a' && character <= 'z' || character >= 'A' && character <= 'Z' || character >= '0' && character <= '9' || character == '-' || character == '_' || character == '.' {
+		if character >= 'a' && character <= 'z' || character >= 'A' && character <= 'Z' || character >= '0' && character <= '9' || character == '-' || character == '_' {
 			continue
 		}
 		return errors.Errorf("mount ID %q contains an invalid character", mountID)
@@ -1622,15 +1622,8 @@ func validateMountID(mountID string) error {
 	return nil
 }
 
-func newMountID() (string, error) {
-	value := make([]byte, 16)
-	if _, err := rand.Read(value); err != nil {
-		return "", errors.Wrap(err, "failed to generate mount ID")
-	}
-	value[6] = value[6]&0x0f | 0x40
-	value[8] = value[8]&0x3f | 0x80
-	encoded := hex.EncodeToString(value)
-	return fmt.Sprintf("%s-%s-%s-%s-%s", encoded[0:8], encoded[8:12], encoded[12:16], encoded[16:20], encoded[20:32]), nil
+func newMountID() string {
+	return xid.New().String()
 }
 
 func validateExecutable(path string) error {

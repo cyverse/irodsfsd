@@ -1989,6 +1989,56 @@ func newTestManagerForPathValidation(t *testing.T, tempDir string, allowedRoots 
 	return manager
 }
 
+func TestValidateMountIDRejectsDot(t *testing.T) {
+	for _, mountID := range []string{".", "..", "a.b.c", "my.pvc.name", "...", "..foo", "foo.."} {
+		if err := validateMountID(mountID); err == nil {
+			t.Errorf("validateMountID(%q) error = nil, want it rejected: \".\" is not a valid mount ID character", mountID)
+		}
+	}
+}
+
+func TestMountRejectsDotDotMountID(t *testing.T) {
+	tempDir := t.TempDir()
+	executablePath := makeFakeIRODSFS(t, tempDir, filepath.Join(tempDir, "stdin"), filepath.Join(tempDir, "args"), false)
+	mountRootPath := filepath.Join(tempDir, "data")
+
+	daemonConfig := commons.NewDefaultConfig()
+	daemonConfig.IRODSFSExecutablePath = executablePath
+	daemonConfig.MountRootPath = mountRootPath
+	daemonConfig.LogRootPath = filepath.Join(tempDir, "logs")
+	daemonConfig.AllowedMountRootPaths = []string{tempDir}
+
+	manager, err := newMountManager(daemonConfig, &fakeFuseController{}, func(string) (bool, error) {
+		return false, nil
+	}, time.Now, newTestRepository(t))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	mountID := ".."
+	_, err = manager.Mount(context.Background(), &api.MountRequest{
+		MountId: &mountID,
+		Config:  newTestIRODSFSMountConfig(filepath.Join(tempDir, "mount")),
+	})
+	if err == nil {
+		t.Fatal("Mount() error = nil, want a \"..\" mount ID rejected before it can escape mount_root_path")
+	}
+}
+
+func TestNewMountIDGeneratesValidUniqueIDs(t *testing.T) {
+	seen := map[string]bool{}
+	for range 100 {
+		mountID := newMountID()
+		if err := validateMountID(mountID); err != nil {
+			t.Fatalf("newMountID() = %q, want a valid mount ID: %v", mountID, err)
+		}
+		if seen[mountID] {
+			t.Fatalf("newMountID() = %q, want unique IDs", mountID)
+		}
+		seen[mountID] = true
+	}
+}
+
 func TestValidateMountConfigRejectsSymlinkEscapeFromAllowedRoot(t *testing.T) {
 	tempDir := t.TempDir()
 	allowedRoot := filepath.Join(tempDir, "allowed")
