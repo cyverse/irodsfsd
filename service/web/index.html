@@ -183,7 +183,9 @@
           <div class="field"><label for="irods-zone">Zone</label><input id="irods-zone"></div>
           <div class="field"><label for="irods-user">User</label><input id="irods-user"></div>
           <div class="field"><label for="irods-password">Password</label><input id="irods-password" type="password" autocomplete="new-password"></div>
+          <div class="field"><label for="irods-client-user">Client username</label><input id="irods-client-user" placeholder="proxied user (optional)"></div>
           <div class="field"><label for="irods-path">iRODS path</label><input id="irods-path" placeholder="/tempZone/home/alice"></div>
+          <div class="field"><label for="irods-pool-endpoint">Pool endpoint</label><input id="irods-pool-endpoint" placeholder="unix:///run/irodsfs-pool.sock (optional)"></div>
         </div>
 
         <div id="fields-davfs" class="grid hidden">
@@ -416,12 +418,16 @@
       if (port) account.irods_port = parseInt(port, 10);
       var password = el("irods-password").value;
       if (password) account.irods_user_password = password;
+      var clientUsername = el("irods-client-user").value.trim();
+      if (clientUsername) account.irods_client_user_name = clientUsername;
 
       var irodsPath = el("irods-path").value.trim();
       config.irodsfs = {
         account: account,
         path_mappings: irodsPath ? [{ irods_path: irodsPath, mapping_path: "/", resource_type: "dir" }] : []
       };
+      var poolEndpoint = el("irods-pool-endpoint").value.trim();
+      if (poolEndpoint) config.irodsfs.pool_endpoint = poolEndpoint;
     } else if (client === "davfs") {
       config.davfs = {
         url: el("davfs-url").value.trim(),
