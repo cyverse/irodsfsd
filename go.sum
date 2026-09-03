@@ -33,8 +33,8 @@ github.com/cyverse/go-daemonizer v0.2.0 h1:8Ez6qHZgCRYoQ1FylG0LvtmR/Sx7ovNtI1gtL
 github.com/cyverse/go-daemonizer v0.2.0/go.mod h1:vtw6PguGBLYFejqi2bV6iWqPROlONxFVDQ2sQphyczk=
 github.com/cyverse/go-irodsclient v0.21.2 h1:FfAjGyXE71ysLbsi0AAP2GJlTpfZQohl1ojbQczS+ak=
 github.com/cyverse/go-irodsclient v0.21.2/go.mod h1:HaK+ZsfAi0gvCnqroPxSfJnxK41PeGDD2FKNG1pZiN0=
-github.com/cyverse/irodsfs v0.12.5-0.20260903185552-20fc102383fa h1:7CGuXc8zjdaMre5QbxYNt2qWcjbnfM+OB8+IeEBcgUg=
-github.com/cyverse/irodsfs v0.12.5-0.20260903185552-20fc102383fa/go.mod h1:R3+yyFk2Sq6IKO9oxWtJtuGtXfgTYNquLKf8OKg8+oQ=
+github.com/cyverse/irodsfs v0.12.5-0.20260903200508-8935d45ecf4c h1:eDTUkyzaadJks75nQCOM8g5UsX6CkNv2AN1GjGNZcPc=
+github.com/cyverse/irodsfs v0.12.5-0.20260903200508-8935d45ecf4c/go.mod h1:R3+yyFk2Sq6IKO9oxWtJtuGtXfgTYNquLKf8OKg8+oQ=
 github.com/cyverse/irodsfs-common v0.0.0-20260903162056-c120cdd9c8d5 h1:XGLf6Nc7WhJpQfwqQ0Syg1Ruvo+yn32nv0OMQG/MhbU=
 github.com/cyverse/irodsfs-common v0.0.0-20260903162056-c120cdd9c8d5/go.mod h1:IOz2+jn3k8uUBzjKWgsGK+8yRjcV0eEbltL/6qA+j+o=
 github.com/danwakefield/fnmatch v0.0.0-20160403171240-cbb64ac3d964 h1:y5HC9v93H5EPKqaS1UYVg1uYah5Xf51mBfIoWehClUQ=
