@@ -43,6 +43,10 @@ type mountOperations interface {
 	Ready(context.Context) error
 }
 
+type mountEventOperations interface {
+	SubscribeMountEvents(*api.WatchMountEventsRequest) (<-chan *api.MountEvent, func())
+}
+
 // MountServer exposes MountManager through the generated gRPC contract.
 type MountServer struct {
 	api.UnimplementedMountServiceServer
@@ -130,6 +134,30 @@ func (server *MountServer) GetMount(ctx context.Context, request *api.GetMountRe
 		return nil, mountStatusError(err, false)
 	}
 	return &api.GetMountResponse{Mount: mount}, nil
+}
+
+// WatchMountEvents streams mount lifecycle snapshots until the caller
+// cancels its stream context.
+func (server *MountServer) WatchMountEvents(request *api.WatchMountEventsRequest, stream api.MountService_WatchMountEventsServer) error {
+	manager, ok := server.manager.(mountEventOperations)
+	if !ok {
+		return status.Error(codes.Unimplemented, "mount event streaming is unavailable")
+	}
+	events, cancel := manager.SubscribeMountEvents(request)
+	defer cancel()
+	for {
+		select {
+		case <-stream.Context().Done():
+			return stream.Context().Err()
+		case event, ok := <-events:
+			if !ok {
+				return nil
+			}
+			if err := stream.Send(event); err != nil {
+				return err
+			}
+		}
+	}
 }
 
 func mountStatusError(err error, invalidWhenUnknown bool) error {

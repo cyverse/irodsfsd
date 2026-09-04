@@ -42,6 +42,7 @@ func run() error {
 	endpoint := flag.String("endpoint", "unix:///var/lib/irodsfsd/comm.sock", "irodsfsd gRPC endpoint")
 	timeout := flag.Duration("timeout", 5*time.Minute, "mount RPC timeout")
 	mountID := flag.String("mount-id", "", "optional caller-supplied mount ID")
+	wait := flag.Bool("wait", false, "wait until the mount is ready or fails")
 	flag.Parse()
 	if flag.NArg() != 1 {
 		return fmt.Errorf("usage: mount [options] <mount-config.json>")
@@ -60,9 +61,9 @@ func run() error {
 
 	var mount *client.MountInfo
 	if *mountID == "" {
-		mount, err = serviceClient.Mount(config)
+		mount, err = serviceClient.Mount(config, *wait)
 	} else {
-		mount, err = serviceClient.MountWithID(*mountID, config)
+		mount, err = serviceClient.MountWithID(*mountID, config, *wait)
 	}
 	if err != nil {
 		return err

@@ -12,6 +12,10 @@ type Account = api.Account
 type PathMapping = api.PathMapping
 type MountInfo = api.MountInfo
 type MountState = api.MountState
+type MountEvent = api.MountEvent
+type MountEventType = api.MountEventType
+type WatchMountEventsRequest = api.WatchMountEventsRequest
+type MountEventStream = api.MountService_WatchMountEventsClient
 
 // ListMountsFilter selects mounts returned by MountServiceClient.ListMounts.
 // Empty fields do not restrict the result.
@@ -30,4 +34,7 @@ const (
 	MountStateUnmounting     = api.MountState_MOUNT_STATE_UNMOUNTING
 	MountStateRetryWait      = api.MountState_MOUNT_STATE_RETRY_WAIT
 	MountStateFailed         = api.MountState_MOUNT_STATE_FAILED
+	MountEventTypeSnapshot   = api.MountEventType_MOUNT_EVENT_TYPE_SNAPSHOT
+	MountEventTypeUpdated    = api.MountEventType_MOUNT_EVENT_TYPE_UPDATED
+	MountEventTypeRemoved    = api.MountEventType_MOUNT_EVENT_TYPE_REMOVED
 )

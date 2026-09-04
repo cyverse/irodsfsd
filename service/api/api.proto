@@ -223,6 +223,27 @@ message GetMountResponse {
   MountInfo mount = 1;
 }
 
+// WatchMountEventsRequest filters lifecycle events. Empty mount_ids selects
+// every mount; include_current first emits the currently known snapshots.
+message WatchMountEventsRequest {
+  repeated string mount_ids = 1;
+  bool include_current = 2;
+}
+
+enum MountEventType {
+  MOUNT_EVENT_TYPE_UNSPECIFIED = 0;
+  MOUNT_EVENT_TYPE_SNAPSHOT = 1;
+  MOUNT_EVENT_TYPE_UPDATED = 2;
+  MOUNT_EVENT_TYPE_REMOVED = 3;
+}
+
+// MountEvent always contains a redacted MountInfo. REMOVED is the final
+// snapshot emitted after an unmount record has been deleted.
+message MountEvent {
+  MountEventType type = 1;
+  MountInfo mount = 2;
+}
+
 // MountService manages the complete lifetime of an irodsfs mount. Mount
 // creates and starts a mount; Unmount stops it and removes its stored record.
 service MountService {
@@ -230,4 +251,5 @@ service MountService {
   rpc Unmount(UnmountRequest) returns (UnmountResponse) {}
   rpc ListMounts(ListMountsRequest) returns (ListMountsResponse) {}
   rpc GetMount(GetMountRequest) returns (GetMountResponse) {}
+  rpc WatchMountEvents(WatchMountEventsRequest) returns (stream MountEvent) {}
 }

@@ -134,6 +134,11 @@ type managedMount struct {
 	mountLog *logstore.MountLog
 }
 
+type mountEventSubscriber struct {
+	mountIDs map[string]struct{}
+	events   chan *api.MountEvent
+}
+
 // MountManager owns irodsfs processes, system mount commands, and their
 // in-memory state.
 type MountManager struct {
@@ -153,6 +158,10 @@ type MountManager struct {
 	// filesystem operations or waiting for a client process.
 	mutex  sync.RWMutex
 	mounts map[string]*managedMount
+
+	eventMutex       sync.Mutex
+	eventSubscribers map[uint64]*mountEventSubscriber
+	nextSubscriberID uint64
 }
 
 // NewMountManager validates FUSE and constructs a process manager. Mount
@@ -197,13 +206,14 @@ func newMountManager(config *irodsfsd_commons.Config, fuse fuseController, probe
 	}
 
 	return &MountManager{
-		config:     config,
-		fuse:       fuse,
-		probe:      probe,
-		now:        now,
-		repository: repository,
-		randFloat:  mathrand.Float64,
-		mounts:     map[string]*managedMount{},
+		config:           config,
+		fuse:             fuse,
+		probe:            probe,
+		now:              now,
+		repository:       repository,
+		randFloat:        mathrand.Float64,
+		mounts:           map[string]*managedMount{},
+		eventSubscribers: map[uint64]*mountEventSubscriber{},
 	}, nil
 }
 
@@ -476,6 +486,7 @@ func (manager *MountManager) startMount(entry *managedMount, generation uint64, 
 	exitDone := entry.exitDone
 	entry.mutex.Unlock()
 	manager.persistBestEffort(entry)
+	manager.publishMountEvent(api.MountEventType_MOUNT_EVENT_TYPE_UPDATED, manager.snapshot(entry))
 
 	go manager.waitForProcess(entry, generation, command, exitDone)
 	go manager.waitForMount(entry, generation, mountDeadline, exitDone)
@@ -532,6 +543,7 @@ func (manager *MountManager) Unmount(ctx context.Context, request *api.UnmountRe
 	entry.info.UpdatedAt = timestamppb.New(manager.now())
 	tombstoneRecord := &store.MountRecord{Info: proto.Clone(entry.info).(*api.MountInfo), Tombstone: true}
 	entry.mutex.Unlock()
+	manager.publishMountEvent(api.MountEventType_MOUNT_EVENT_TYPE_UPDATED, manager.snapshot(entry))
 
 	// Persist the tombstone before any physical unmount work begins: if this
 	// fails, a restart must still see the mount as active, not half torn
@@ -647,6 +659,7 @@ func (manager *MountManager) performUnmountAttempt(ctx context.Context, entry *m
 	manager.mutex.Lock()
 	delete(manager.mounts, mountID)
 	manager.mutex.Unlock()
+	manager.publishMountEvent(api.MountEventType_MOUNT_EVENT_TYPE_REMOVED, result)
 
 	return result, nil
 }
@@ -692,6 +705,85 @@ func (manager *MountManager) GetMount(ctx context.Context, mountID string) (*api
 		return nil, errors.Wrapf(ErrMountNotFound, "mount ID %q", mountID)
 	}
 	return manager.snapshot(entry), nil
+}
+
+// SubscribeMountEvents registers a buffered lifecycle-event subscriber. It
+// queues initial snapshots while holding eventMutex, preventing a transition
+// from being missed between subscription and the first received event.
+func (manager *MountManager) SubscribeMountEvents(request *api.WatchMountEventsRequest) (<-chan *api.MountEvent, func()) {
+	if request == nil {
+		request = &api.WatchMountEventsRequest{}
+	}
+	filter := make(map[string]struct{}, len(request.MountIds))
+	for _, mountID := range request.MountIds {
+		if mountID != "" {
+			filter[mountID] = struct{}{}
+		}
+	}
+
+	manager.eventMutex.Lock()
+	manager.nextSubscriberID++
+	subscriberID := manager.nextSubscriberID
+	subscriber := &mountEventSubscriber{mountIDs: filter, events: make(chan *api.MountEvent, 64)}
+	manager.eventSubscribers[subscriberID] = subscriber
+	if request.IncludeCurrent {
+		for _, mount := range manager.snapshotMounts() {
+			if subscriber.matches(mount.MountId) {
+				subscriber.events <- &api.MountEvent{Type: api.MountEventType_MOUNT_EVENT_TYPE_SNAPSHOT, Mount: mount}
+			}
+		}
+	}
+	manager.eventMutex.Unlock()
+
+	cancel := func() {
+		manager.eventMutex.Lock()
+		if current, exists := manager.eventSubscribers[subscriberID]; exists {
+			delete(manager.eventSubscribers, subscriberID)
+			close(current.events)
+		}
+		manager.eventMutex.Unlock()
+	}
+	return subscriber.events, cancel
+}
+
+func (subscriber *mountEventSubscriber) matches(mountID string) bool {
+	if len(subscriber.mountIDs) == 0 {
+		return true
+	}
+	_, exists := subscriber.mountIDs[mountID]
+	return exists
+}
+
+func (manager *MountManager) publishMountEvent(eventType api.MountEventType, mount *api.MountInfo) {
+	if mount == nil {
+		return
+	}
+	manager.eventMutex.Lock()
+	defer manager.eventMutex.Unlock()
+	for _, subscriber := range manager.eventSubscribers {
+		if !subscriber.matches(mount.MountId) {
+			continue
+		}
+		select {
+		case subscriber.events <- &api.MountEvent{Type: eventType, Mount: proto.Clone(mount).(*api.MountInfo)}:
+		default:
+			log.WithField("mount_id", mount.MountId).Warn("dropping slow mount event subscriber")
+		}
+	}
+}
+
+func (manager *MountManager) snapshotMounts() []*api.MountInfo {
+	manager.mutex.RLock()
+	entries := make([]*managedMount, 0, len(manager.mounts))
+	for _, entry := range manager.mounts {
+		entries = append(entries, entry)
+	}
+	manager.mutex.RUnlock()
+	result := make([]*api.MountInfo, 0, len(entries))
+	for _, entry := range entries {
+		result = append(result, manager.snapshot(entry))
+	}
+	return result
 }
 
 // ListMounts returns redacted snapshots matching all supplied filters.
@@ -1137,6 +1229,7 @@ func (manager *MountManager) recordMountFailure(entry *managedMount, generation 
 	}
 	entry.mutex.Unlock()
 	manager.persistBestEffort(entry)
+	manager.publishMountEvent(api.MountEventType_MOUNT_EVENT_TYPE_UPDATED, manager.snapshot(entry))
 
 	if !retrying {
 		return
@@ -1167,6 +1260,7 @@ func (manager *MountManager) recordTerminalMountFailure(entry *managedMount, gen
 	entry.info.NextRetryAt = nil
 	entry.mutex.Unlock()
 	manager.persistBestEffort(entry)
+	manager.publishMountEvent(api.MountEventType_MOUNT_EVENT_TYPE_UPDATED, manager.snapshot(entry))
 }
 
 // retryMount fires after a scheduled mount-retry delay and starts a fresh
@@ -1194,6 +1288,7 @@ func (manager *MountManager) retryMount(entry *managedMount, generation uint64) 
 	entry.persistent = false
 	entry.mutex.Unlock()
 	manager.persistBestEffort(entry)
+	manager.publishMountEvent(api.MountEventType_MOUNT_EVENT_TYPE_UPDATED, manager.snapshot(entry))
 
 	mountTimeout := time.Duration(manager.config.MountTimeout)
 	if mountTimeout <= 0 {
@@ -1235,6 +1330,7 @@ func (manager *MountManager) waitForMount(entry *managedMount, generation uint64
 		entry.mutex.Unlock()
 		if transitioned {
 			manager.persistBestEffort(entry)
+			manager.publishMountEvent(api.MountEventType_MOUNT_EVENT_TYPE_UPDATED, manager.snapshot(entry))
 		}
 		return true
 	}
@@ -1360,6 +1456,7 @@ func (manager *MountManager) recordUnmountFailure(entry *managedMount, generatio
 	}
 	entry.mutex.Unlock()
 	manager.persistBestEffort(entry)
+	manager.publishMountEvent(api.MountEventType_MOUNT_EVENT_TYPE_UPDATED, manager.snapshot(entry))
 
 	if !retrying {
 		return
@@ -1390,6 +1487,7 @@ func (manager *MountManager) retryUnmount(entry *managedMount, generation uint64
 	entry.info.UpdatedAt = timestamppb.New(manager.now())
 	entry.mutex.Unlock()
 	manager.persistBestEffort(entry)
+	manager.publishMountEvent(api.MountEventType_MOUNT_EVENT_TYPE_UPDATED, manager.snapshot(entry))
 
 	if _, err := manager.performUnmountAttempt(context.Background(), entry, newGeneration); err != nil {
 		log.WithError(err).WithField("mount_id", entry.mountID()).Warn("scheduled unmount retry failed")

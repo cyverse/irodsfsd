@@ -19,10 +19,11 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	MountService_Mount_FullMethodName      = "/api.MountService/Mount"
-	MountService_Unmount_FullMethodName    = "/api.MountService/Unmount"
-	MountService_ListMounts_FullMethodName = "/api.MountService/ListMounts"
-	MountService_GetMount_FullMethodName   = "/api.MountService/GetMount"
+	MountService_Mount_FullMethodName            = "/api.MountService/Mount"
+	MountService_Unmount_FullMethodName          = "/api.MountService/Unmount"
+	MountService_ListMounts_FullMethodName       = "/api.MountService/ListMounts"
+	MountService_GetMount_FullMethodName         = "/api.MountService/GetMount"
+	MountService_WatchMountEvents_FullMethodName = "/api.MountService/WatchMountEvents"
 )
 
 // MountServiceClient is the client API for MountService service.
@@ -36,6 +37,7 @@ type MountServiceClient interface {
 	Unmount(ctx context.Context, in *UnmountRequest, opts ...grpc.CallOption) (*UnmountResponse, error)
 	ListMounts(ctx context.Context, in *ListMountsRequest, opts ...grpc.CallOption) (*ListMountsResponse, error)
 	GetMount(ctx context.Context, in *GetMountRequest, opts ...grpc.CallOption) (*GetMountResponse, error)
+	WatchMountEvents(ctx context.Context, in *WatchMountEventsRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[MountEvent], error)
 }
 
 type mountServiceClient struct {
@@ -86,6 +88,25 @@ func (c *mountServiceClient) GetMount(ctx context.Context, in *GetMountRequest, 
 	return out, nil
 }
 
+func (c *mountServiceClient) WatchMountEvents(ctx context.Context, in *WatchMountEventsRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[MountEvent], error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	stream, err := c.cc.NewStream(ctx, &MountService_ServiceDesc.Streams[0], MountService_WatchMountEvents_FullMethodName, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &grpc.GenericClientStream[WatchMountEventsRequest, MountEvent]{ClientStream: stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type MountService_WatchMountEventsClient = grpc.ServerStreamingClient[MountEvent]
+
 // MountServiceServer is the server API for MountService service.
 // All implementations must embed UnimplementedMountServiceServer
 // for forward compatibility.
@@ -97,6 +118,7 @@ type MountServiceServer interface {
 	Unmount(context.Context, *UnmountRequest) (*UnmountResponse, error)
 	ListMounts(context.Context, *ListMountsRequest) (*ListMountsResponse, error)
 	GetMount(context.Context, *GetMountRequest) (*GetMountResponse, error)
+	WatchMountEvents(*WatchMountEventsRequest, grpc.ServerStreamingServer[MountEvent]) error
 	mustEmbedUnimplementedMountServiceServer()
 }
 
@@ -118,6 +140,9 @@ func (UnimplementedMountServiceServer) ListMounts(context.Context, *ListMountsRe
 }
 func (UnimplementedMountServiceServer) GetMount(context.Context, *GetMountRequest) (*GetMountResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetMount not implemented")
+}
+func (UnimplementedMountServiceServer) WatchMountEvents(*WatchMountEventsRequest, grpc.ServerStreamingServer[MountEvent]) error {
+	return status.Error(codes.Unimplemented, "method WatchMountEvents not implemented")
 }
 func (UnimplementedMountServiceServer) mustEmbedUnimplementedMountServiceServer() {}
 func (UnimplementedMountServiceServer) testEmbeddedByValue()                      {}
@@ -212,6 +237,17 @@ func _MountService_GetMount_Handler(srv interface{}, ctx context.Context, dec fu
 	return interceptor(ctx, in, info, handler)
 }
 
+func _MountService_WatchMountEvents_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(WatchMountEventsRequest)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(MountServiceServer).WatchMountEvents(m, &grpc.GenericServerStream[WatchMountEventsRequest, MountEvent]{ServerStream: stream})
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type MountService_WatchMountEventsServer = grpc.ServerStreamingServer[MountEvent]
+
 // MountService_ServiceDesc is the grpc.ServiceDesc for MountService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -236,6 +272,12 @@ var MountService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _MountService_GetMount_Handler,
 		},
 	},
-	Streams:  []grpc.StreamDesc{},
+	Streams: []grpc.StreamDesc{
+		{
+			StreamName:    "WatchMountEvents",
+			Handler:       _MountService_WatchMountEvents_Handler,
+			ServerStreams: true,
+		},
+	},
 	Metadata: "service/api/api.proto",
 }

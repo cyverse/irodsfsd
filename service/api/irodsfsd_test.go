@@ -18,6 +18,7 @@ func TestMountServiceMethods(t *testing.T) {
 		"Unmount",
 		"ListMounts",
 		"GetMount",
+		"WatchMountEvents",
 	}
 	got := make([]string, 0, service.Methods().Len())
 	for index := 0; index < service.Methods().Len(); index++ {

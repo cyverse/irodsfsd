@@ -360,14 +360,17 @@ func (client *MountServiceClient) doWithReconnect(f func() (interface{}, error))
 	return res, err
 }
 
-// Mount requests a mount with a server-generated mount ID.
-func (client *MountServiceClient) Mount(config *MountConfig) (*MountInfo, error) {
-	return client.MountWithID("", config)
+// Mount requests a mount with a server-generated mount ID. When wait is
+// true, it returns only after the mount reaches MOUNTED or FAILED.
+func (client *MountServiceClient) Mount(config *MountConfig, wait bool) (*MountInfo, error) {
+	return client.MountWithID("", config, wait)
 }
 
 // MountWithID requests a mount using mountID. An empty mountID has the same
-// behavior as Mount and lets the server generate the ID.
-func (client *MountServiceClient) MountWithID(mountID string, config *MountConfig) (*MountInfo, error) {
+// behavior as Mount and lets the server generate the ID. When wait is true,
+// the client consumes the daemon's lifecycle event stream until the mount is
+// usable or has failed.
+func (client *MountServiceClient) MountWithID(mountID string, config *MountConfig, wait bool) (*MountInfo, error) {
 	if config == nil {
 		return nil, errors.New("mount config is required")
 	}
@@ -405,7 +408,56 @@ func (client *MountServiceClient) MountWithID(mountID string, config *MountConfi
 		client.logger.Error(err)
 		return nil, err
 	}
-	return response.GetMount(), nil
+	mount := response.GetMount()
+	if !wait {
+		return mount, nil
+	}
+	return client.waitForMount(mount.GetMountId())
+}
+
+func (client *MountServiceClient) waitForMount(mountID string) (*MountInfo, error) {
+	if mountID == "" {
+		return nil, errors.New("mount ID is required")
+	}
+	ctx, cancel := client.getContextWithDeadline()
+	defer cancel()
+	stream, err := client.WatchMountEvents(ctx, &WatchMountEventsRequest{
+		MountIds:       []string{mountID},
+		IncludeCurrent: true,
+	})
+	if err != nil {
+		return nil, err
+	}
+	for {
+		event, err := stream.Recv()
+		if err != nil {
+			return nil, errors.Wrapf(err, "failed while waiting for mount %q", mountID)
+		}
+		mount := event.GetMount()
+		if mount == nil || mount.GetMountId() != mountID {
+			continue
+		}
+		switch mount.GetState() {
+		case api.MountState_MOUNT_STATE_MOUNTED, api.MountState_MOUNT_STATE_FAILED:
+			return mount, nil
+		}
+		if event.GetType() == api.MountEventType_MOUNT_EVENT_TYPE_REMOVED {
+			return nil, errors.Newf("mount %q was removed while waiting", mountID)
+		}
+	}
+}
+
+// WatchMountEvents opens a server-streaming lifecycle event subscription.
+// The caller owns ctx and should cancel it when it no longer needs events.
+func (client *MountServiceClient) WatchMountEvents(ctx context.Context, request *WatchMountEventsRequest) (MountEventStream, error) {
+	if request == nil {
+		request = &WatchMountEventsRequest{}
+	}
+	apiClient, err := client.getAPIClient()
+	if err != nil {
+		return nil, err
+	}
+	return apiClient.WatchMountEvents(ctx, request)
 }
 
 // Unmount requests removal of the mount identified by mountID.

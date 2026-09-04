@@ -29,6 +29,20 @@ type testMountAPIClient struct {
 	unavailable bool
 }
 
+type testMountEventStream struct {
+	grpc.ClientStream
+	events []*api.MountEvent
+}
+
+func (stream *testMountEventStream) Recv() (*api.MountEvent, error) {
+	if len(stream.events) == 0 {
+		return nil, io.EOF
+	}
+	event := stream.events[0]
+	stream.events = stream.events[1:]
+	return event, nil
+}
+
 func (client *testMountAPIClient) Mount(ctx context.Context, request *api.MountRequest, _ ...grpc.CallOption) (*api.MountResponse, error) {
 	if client.unavailable {
 		return nil, status.Error(codes.Unavailable, "test server unavailable")
@@ -55,6 +69,25 @@ func (client *testMountAPIClient) GetMount(ctx context.Context, request *api.Get
 		return nil, status.Error(codes.Unavailable, "test server unavailable")
 	}
 	return client.server.GetMount(ctx, request)
+}
+
+func (client *testMountAPIClient) WatchMountEvents(_ context.Context, request *api.WatchMountEventsRequest, _ ...grpc.CallOption) (api.MountService_WatchMountEventsClient, error) {
+	if client.unavailable {
+		return nil, status.Error(codes.Unavailable, "test server unavailable")
+	}
+	if len(request.GetMountIds()) != 1 {
+		return nil, status.Error(codes.InvalidArgument, "one mount ID is required")
+	}
+	info, err := client.server.GetMount(context.Background(), &api.GetMountRequest{MountId: request.GetMountIds()[0]})
+	if err != nil {
+		return nil, err
+	}
+	mount := proto.Clone(info.GetMount()).(*api.MountInfo)
+	mount.State = api.MountState_MOUNT_STATE_MOUNTED
+	return &testMountEventStream{events: []*api.MountEvent{{
+		Type:  api.MountEventType_MOUNT_EVENT_TYPE_UPDATED,
+		Mount: mount,
+	}}}, nil
 }
 
 func newTestMountServer() *testMountServer {
@@ -118,7 +151,7 @@ func TestMountServiceClientLifecycleAndOperations(t *testing.T) {
 	client := startTestClient(t)
 	config := &api.MountConfig{MountPath: "/mnt/test"}
 
-	generated, err := client.Mount(config)
+	generated, err := client.Mount(config, false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -126,12 +159,20 @@ func TestMountServiceClientLifecycleAndOperations(t *testing.T) {
 		t.Fatalf("generated mount = %v", generated)
 	}
 
-	specified, err := client.MountWithID("specified-id", config)
+	specified, err := client.MountWithID("specified-id", config, false)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if specified.MountId != "specified-id" {
 		t.Fatalf("specified mount ID = %q", specified.MountId)
+	}
+
+	waited, err := client.MountWithID("waited-id", config, true)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if waited.GetState() != api.MountState_MOUNT_STATE_MOUNTED {
+		t.Fatalf("waited mount state = %s, want MOUNTED", waited.GetState())
 	}
 
 	fetched, err := client.GetMount("specified-id")
@@ -153,7 +194,7 @@ func TestMountServiceClientLifecycleAndOperations(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(mounts) != 2 {
+	if len(mounts) != 3 {
 		t.Fatalf("mount count = %d", len(mounts))
 	}
 	testAPIClient := client.apiClient.(*testMountAPIClient)
@@ -179,10 +220,10 @@ func TestMountServiceClientLifecycleAndOperations(t *testing.T) {
 
 func TestMountServiceClientRequiresConnectionAndValidArguments(t *testing.T) {
 	client := NewMountServiceClient("tcp://bufnet", time.Second, false, nil)
-	if _, err := client.Mount(&api.MountConfig{}); err == nil {
+	if _, err := client.Mount(&api.MountConfig{}, false); err == nil {
 		t.Fatal("Mount unexpectedly succeeded before Connect")
 	}
-	if _, err := client.Mount(nil); err == nil {
+	if _, err := client.Mount(nil, false); err == nil {
 		t.Fatal("Mount unexpectedly accepted nil config")
 	}
 	if _, err := client.Unmount(""); err == nil {
