@@ -19,6 +19,7 @@ import (
 	"github.com/cyverse/irodsfsd/service/logstore"
 	"github.com/cyverse/irodsfsd/service/store"
 	"google.golang.org/protobuf/types/known/durationpb"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 func testRepositoryEncryptionKey() []byte {
@@ -40,13 +41,13 @@ func newTestRepository(t *testing.T) *store.MountRepository {
 }
 
 type fakeFuseController struct {
-	mutex            sync.Mutex
-	checkCalls       []bool
-	checkErr         error
-	allowOtherCalls  int
-	allowOtherErr    error
-	unmountPaths     []string
-	unmountErr       error
+	mutex           sync.Mutex
+	checkCalls      []bool
+	checkErr        error
+	allowOtherCalls int
+	allowOtherErr   error
+	unmountPaths    []string
+	unmountErr      error
 }
 
 func (controller *fakeFuseController) Check(checkFusermount bool) error {
@@ -1474,6 +1475,35 @@ func TestMountRetriesTransientCrashThenSucceeds(t *testing.T) {
 
 	if _, err := manager.Unmount(context.Background(), &api.UnmountRequest{MountId: result.MountId}); err != nil {
 		t.Fatal(err)
+	}
+}
+
+func TestMountDoesNotAutoRemountAfterSuccessfulMountWhenDisabled(t *testing.T) {
+	config := commons.NewDefaultConfig()
+	config.Retry.InitialDelay = commons.Duration(time.Hour)
+	repository := newTestRepository(t)
+	manager := &MountManager{config: config, repository: repository, now: time.Now}
+	entry := &managedMount{
+		info: &api.MountInfo{
+			MountId:   "mounted-then-crashed",
+			Attempt:   1,
+			State:     api.MountState_MOUNT_STATE_MOUNTED,
+			MountedAt: timestamppb.New(time.Now()),
+		},
+		exitDone: make(chan struct{}),
+	}
+
+	manager.recordMountFailure(entry, 0, "MOUNT_COMMAND_EXITED", "process exited", nil)
+
+	info := manager.snapshot(entry)
+	if info.State != api.MountState_MOUNT_STATE_FAILED {
+		t.Errorf("state = %v, want FAILED", info.State)
+	}
+	if info.GetLastError().GetRetryable() {
+		t.Error("successful mount crash was marked retryable with auto_remount disabled")
+	}
+	if info.GetNextRetryAt() != nil {
+		t.Error("successful mount crash scheduled a retry with auto_remount disabled")
 	}
 }
 

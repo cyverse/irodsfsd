@@ -24,6 +24,13 @@ allowed_mount_root_paths:
 # /etc/fuse.conf unless irodsfsd runs as root.
 allow_fuse_allow_other: true
 
+# Retry a mount after it was successfully mounted and then crashes.
+# Initial mount failures use retry settings regardless of this value.
+auto_remount: false
+# Restore ordinary persisted mounts when irodsfsd starts. Unmount cleanup is
+# always resumed.
+restore_mounts_on_restart: false
+
 retry:
   max_attempts: 5
   initial_delay: 1s

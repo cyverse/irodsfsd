@@ -61,12 +61,18 @@ func NewService(config *commons.Config) (*Service, error) {
 		_ = dataStore.Close()
 		return nil, errors.Wrap(err, "failed to create mount manager")
 	}
-	// Reconcile stored mount intent against the real system state before the
-	// API begins accepting requests, so a client never sees a mount that is
-	// still being restored or torn down from a previous run.
-	if err := manager.Reconcile(context.Background()); err != nil {
+	// Always finish a previously accepted unmount. Restoring ordinary mounts
+	// is separately opt-in because a daemon restart must not unexpectedly
+	// recreate mounts unless the operator configured it to do so.
+	var reconcileErr error
+	if config.RestoreMountsOnRestart {
+		reconcileErr = manager.Reconcile(context.Background())
+	} else {
+		reconcileErr = manager.ReconcileTombstones(context.Background())
+	}
+	if reconcileErr != nil {
 		_ = dataStore.Close()
-		return nil, errors.Wrap(err, "failed to reconcile mount state at startup")
+		return nil, errors.Wrap(reconcileErr, "failed to reconcile mount state at startup")
 	}
 	svc, err := newService(config, manager)
 	if err != nil {
@@ -173,10 +179,10 @@ func (svc *Service) Start() error {
 	return nil
 }
 
-// runPeriodicReconcile compares stored mount intent against real system
-// state at reconcile_interval, so drift (a mount that died unnoticed, one
-// that lingers after its supervising records were cleaned up elsewhere) is
-// corrected without requiring a daemon restart.
+// runPeriodicReconcile resumes persisted unmount cleanup at reconcile_interval.
+// Mounted entries are supervised by their own controller; ordinary mount
+// restoration is deliberately limited to startup and controlled by
+// restore_mounts_on_restart.
 func (svc *Service) runPeriodicReconcile(ctx context.Context, manager *MountManager) {
 	defer close(svc.reconcileDone)
 
@@ -192,7 +198,7 @@ func (svc *Service) runPeriodicReconcile(ctx context.Context, manager *MountMana
 		case <-ctx.Done():
 			return
 		case <-ticker.C:
-			if err := manager.Reconcile(ctx); err != nil {
+			if err := manager.ReconcileTombstones(ctx); err != nil {
 				svc.logger.WithError(err).Warn("periodic reconciliation failed")
 			}
 		}

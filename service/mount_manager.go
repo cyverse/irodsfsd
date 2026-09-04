@@ -733,11 +733,11 @@ func (manager *MountManager) ListMounts(ctx context.Context, request *api.ListMo
 }
 
 // Reconcile loads every persisted mount record and reconciles it against
-// the real system state observed through probe. It must run once,
-// synchronously, before the API begins accepting requests: a saved PID is
-// never trusted as proof that this process still owns a mount, so identity
-// is established solely through the mount table, never by signaling a
-// recovered PID.
+// the real system state observed through probe. When startup restoration is
+// enabled it runs synchronously before the API begins accepting requests: a
+// saved PID is never trusted as proof that this process still owns a mount,
+// so identity is established solely through the mount table, never by
+// signaling a recovered PID.
 func (manager *MountManager) Reconcile(ctx context.Context) error {
 	records, err := manager.repository.List(ctx)
 	if err != nil {
@@ -745,6 +745,22 @@ func (manager *MountManager) Reconcile(ctx context.Context) error {
 	}
 	for _, record := range records {
 		manager.reconcileRecord(ctx, record)
+	}
+	return nil
+}
+
+// ReconcileTombstones resumes only persisted unmounts. It is used when
+// startup restoration is disabled and by the periodic reconciler, so an
+// ordinary record can never cause an unexpected remount outside startup.
+func (manager *MountManager) ReconcileTombstones(ctx context.Context) error {
+	records, err := manager.repository.List(ctx)
+	if err != nil {
+		return errors.Wrap(err, "failed to list mount records for reconciliation")
+	}
+	for _, record := range records {
+		if record.Tombstone {
+			manager.reconcileRecord(ctx, record)
+		}
 	}
 	return nil
 }
@@ -1076,7 +1092,11 @@ func (manager *MountManager) recordMountFailure(entry *managedMount, generation 
 		return
 	}
 	attempt := int(entry.info.Attempt)
-	retrying := attempt < manager.maxAttempts()
+	// A first mount has never been usable, so it always receives the normal
+	// configured retries. Once a mount has become MOUNTED, retrying a later
+	// failure recreates an established mount and is therefore opt-in.
+	hadMounted := entry.info.MountedAt != nil
+	retrying := attempt < manager.maxAttempts() && (!hadMounted || manager.config.AutoRemount)
 
 	entry.info.UpdatedAt = timestamppb.New(manager.now())
 	entry.info.LastError = &api.APIError{Code: code, Message: message, Retryable: retrying, Details: details}

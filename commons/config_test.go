@@ -43,6 +43,12 @@ func TestParseYAMLOverlaysDefaults(t *testing.T) {
 	if !config.Debug {
 		t.Fatal("Debug = false")
 	}
+	if config.AutoRemount {
+		t.Fatal("AutoRemount = true, want default false")
+	}
+	if config.RestoreMountsOnRestart {
+		t.Fatal("RestoreMountsOnRestart = true, want default false")
+	}
 	if time.Duration(config.MountTimeout) != 45*time.Second {
 		t.Fatalf("MountTimeout = %s", time.Duration(config.MountTimeout))
 	}
@@ -77,6 +83,19 @@ func TestParseJSONOverlaysDefaults(t *testing.T) {
 	}
 	if config.GetMountRootPath() != "/tmp/irodsfsd/mounts" {
 		t.Fatalf("mount root path = %q", config.GetMountRootPath())
+	}
+}
+
+func TestParseMountRecoveryFlags(t *testing.T) {
+	config, err := NewConfigFromYAML(NewDefaultConfig(), []byte("auto_remount: true\nrestore_mounts_on_restart: true\n"))
+	if err != nil {
+		t.Fatalf("Parse: %v", err)
+	}
+	if !config.AutoRemount {
+		t.Fatal("AutoRemount = false")
+	}
+	if !config.RestoreMountsOnRestart {
+		t.Fatal("RestoreMountsOnRestart = false")
 	}
 }
 

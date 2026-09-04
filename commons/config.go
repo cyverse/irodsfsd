@@ -40,13 +40,21 @@ type Config struct {
 	// host reach the mount, not just the irodsfsd service account that
 	// actually performed it, so it must be an explicit, host-level opt-in
 	// rather than something any mount request can request on its own.
-	AllowFuseAllowOther bool        `yaml:"allow_fuse_allow_other,omitempty" json:"allow_fuse_allow_other,omitempty"`
-	Retry               RetryConfig `yaml:"retry,omitempty" json:"retry,omitempty"`
-	MountTimeout        Duration    `yaml:"mount_timeout,omitempty" json:"mount_timeout,omitempty"`
-	UnmountTimeout      Duration    `yaml:"unmount_timeout,omitempty" json:"unmount_timeout,omitempty"`
-	DAVFSUnmountTimeout Duration    `yaml:"davfs_unmount_timeout,omitempty" json:"davfs_unmount_timeout,omitempty"`
-	ReconcileInterval   Duration    `yaml:"reconcile_interval,omitempty" json:"reconcile_interval,omitempty"`
-	MaxConcurrentMounts int         `yaml:"max_concurrent_mounts,omitempty" json:"max_concurrent_mounts,omitempty"`
+	AllowFuseAllowOther bool `yaml:"allow_fuse_allow_other,omitempty" json:"allow_fuse_allow_other,omitempty"`
+	// AutoRemount controls whether a mount which has already become mounted is
+	// retried after a later mount-process failure. Initial mount failures still
+	// use Retry regardless of this setting.
+	AutoRemount bool `yaml:"auto_remount,omitempty" json:"auto_remount,omitempty"`
+	// RestoreMountsOnRestart controls whether ordinary persisted mounts are
+	// restored while the daemon is starting. Unmount tombstones are always
+	// reconciled so an accepted unmount can finish safely.
+	RestoreMountsOnRestart bool        `yaml:"restore_mounts_on_restart,omitempty" json:"restore_mounts_on_restart,omitempty"`
+	Retry                  RetryConfig `yaml:"retry,omitempty" json:"retry,omitempty"`
+	MountTimeout           Duration    `yaml:"mount_timeout,omitempty" json:"mount_timeout,omitempty"`
+	UnmountTimeout         Duration    `yaml:"unmount_timeout,omitempty" json:"unmount_timeout,omitempty"`
+	DAVFSUnmountTimeout    Duration    `yaml:"davfs_unmount_timeout,omitempty" json:"davfs_unmount_timeout,omitempty"`
+	ReconcileInterval      Duration    `yaml:"reconcile_interval,omitempty" json:"reconcile_interval,omitempty"`
+	MaxConcurrentMounts    int         `yaml:"max_concurrent_mounts,omitempty" json:"max_concurrent_mounts,omitempty"`
 
 	ManagementServicePort int `yaml:"management_service_port,omitempty" json:"management_service_port,omitempty"`
 
@@ -64,8 +72,10 @@ func NewDefaultConfig() *Config {
 		DataRootPath:          DataRootPathDefault,
 		PIDFile:               PIDFilePathDefault,
 
-		AllowedMountRootPaths: []string{AllowedMountRootPathDefault, KubeletMountRootPathDefault},
-		AllowFuseAllowOther:   false,
+		AllowedMountRootPaths:  []string{AllowedMountRootPathDefault, KubeletMountRootPathDefault},
+		AllowFuseAllowOther:    false,
+		AutoRemount:            false,
+		RestoreMountsOnRestart: false,
 		Retry: RetryConfig{
 			MaxAttempts:  RetryMaxAttemptsDefault,
 			InitialDelay: Duration(RetryInitialDelayDefault),
