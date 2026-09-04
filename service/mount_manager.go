@@ -32,6 +32,12 @@ const (
 	mountProbeInterval    = 100 * time.Millisecond
 	defaultMountTimeout   = 30 * time.Second
 	defaultUnmountTimeout = 15 * time.Second
+	// exitCodeIRODSFSConfigurationInvalid is the stable process contract
+	// emitted by irodsfs when its startup configuration fails validation.
+	exitCodeIRODSFSConfigurationInvalid = 10
+	// exitCodeIRODSFSAuthenticationFailed is emitted by irodsfs when initial
+	// iRODS authentication fails.
+	exitCodeIRODSFSAuthenticationFailed = 11
 )
 
 var (
@@ -1030,18 +1036,37 @@ func (manager *MountManager) waitForProcess(entry *managedMount, generation uint
 	manager.recordChildCrash()
 
 	message := processExitMessage(err)
+	failureCode := mountFailureCode(client, err)
 
 	// Clear a broken FUSE endpoint left behind by the crash before deciding
 	// whether to retry: a fresh attempt must never be stacked on top of a
 	// mount point that is still claimed by the dead process.
 	if mounted, probeErr := manager.probe(mountPath); probeErr == nil && mounted {
 		if unmountErr := manager.unmountByClientType(context.Background(), client, mountPath); unmountErr != nil {
-			manager.recordTerminalMountFailure(entry, generation, "MOUNT_COMMAND_EXITED",
+			manager.recordTerminalMountFailure(entry, generation, failureCode,
 				fmt.Sprintf("%s; failed to clean up the broken mount: %v", message, unmountErr))
 			return
 		}
 	}
-	manager.recordMountFailure(entry, generation, "MOUNT_COMMAND_EXITED", message, nil)
+	manager.recordMountFailure(entry, generation, failureCode, message, nil)
+}
+
+// mountFailureCode translates documented client-process exit codes into API
+// error codes. It deliberately applies the irodsfs contract only to irodsfs;
+// mount helpers for DAVFS and NFS may use the same numeric values differently.
+func mountFailureCode(client mountClientType, err error) string {
+	if client == mountClientIRODSFS {
+		var exitErr *exec.ExitError
+		if errors.As(err, &exitErr) {
+			switch exitErr.ExitCode() {
+			case exitCodeIRODSFSConfigurationInvalid:
+				return "IRODSFS_CONFIGURATION_INVALID"
+			case exitCodeIRODSFSAuthenticationFailed:
+				return "IRODSFS_AUTHENTICATION_FAILED"
+			}
+		}
+	}
+	return "MOUNT_COMMAND_EXITED"
 }
 
 func (entry *managedMount) mountPath() string {
@@ -1096,7 +1121,8 @@ func (manager *MountManager) recordMountFailure(entry *managedMount, generation 
 	// configured retries. Once a mount has become MOUNTED, retrying a later
 	// failure recreates an established mount and is therefore opt-in.
 	hadMounted := entry.info.MountedAt != nil
-	retrying := attempt < manager.maxAttempts() && (!hadMounted || manager.config.AutoRemount)
+	retrying := !isNonRetryableMountFailure(code) &&
+		attempt < manager.maxAttempts() && (!hadMounted || manager.config.AutoRemount)
 
 	entry.info.UpdatedAt = timestamppb.New(manager.now())
 	entry.info.LastError = &api.APIError{Code: code, Message: message, Retryable: retrying, Details: details}
@@ -1119,6 +1145,10 @@ func (manager *MountManager) recordMountFailure(entry *managedMount, generation 
 	entry.mutex.Lock()
 	entry.retryTimer = timer
 	entry.mutex.Unlock()
+}
+
+func isNonRetryableMountFailure(code string) bool {
+	return code == "IRODSFS_CONFIGURATION_INVALID" || code == "IRODSFS_AUTHENTICATION_FAILED"
 }
 
 // recordTerminalMountFailure leaves entry FAILED with no further retry,

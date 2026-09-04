@@ -103,6 +103,21 @@ to any host account, so kernel-enforced ownership checks against it can't be
 trusted — a caller may still request `default_permissions` itself if its
 UID/GID is host-authoritative. See `design.md` section 5 for details.
 
+### iRODSFS startup exit statuses
+
+For an iRODSFS child only, irodsfsd recognizes these documented startup exit
+statuses:
+
+| iRODSFS status | Mount `last_error.code` | Retry behavior |
+| --- | --- | --- |
+| `10` | `IRODSFS_CONFIGURATION_INVALID` | No retry; the mount becomes `FAILED`. |
+| `11` | `IRODSFS_AUTHENTICATION_FAILED` | No retry; the mount becomes `FAILED`. |
+| Other non-zero status | `MOUNT_COMMAND_EXITED` | Uses the configured retry policy. |
+
+The special statuses are deliberately not interpreted for DAVFS or NFS mount
+helpers. Failed mount records remain available for inspection until an
+explicit unmount removes them.
+
 ## Running
 
 ```sh

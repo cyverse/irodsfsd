@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"reflect"
 	"slices"
@@ -1504,6 +1505,46 @@ func TestMountDoesNotAutoRemountAfterSuccessfulMountWhenDisabled(t *testing.T) {
 	}
 	if info.GetNextRetryAt() != nil {
 		t.Error("successful mount crash scheduled a retry with auto_remount disabled")
+	}
+}
+
+func TestIRODSFSConfigurationAndAuthenticationFailuresAreNotRetryable(t *testing.T) {
+	for _, testCase := range []struct {
+		exitCode int
+		wantCode string
+	}{
+		{exitCode: 10, wantCode: "IRODSFS_CONFIGURATION_INVALID"},
+		{exitCode: 11, wantCode: "IRODSFS_AUTHENTICATION_FAILED"},
+	} {
+		t.Run(testCase.wantCode, func(t *testing.T) {
+			command := exec.Command("sh", "-c", fmt.Sprintf("exit %d", testCase.exitCode))
+			err := command.Run()
+			if err == nil {
+				t.Fatal("command unexpectedly succeeded")
+			}
+			if got := mountFailureCode(mountClientIRODSFS, err); got != testCase.wantCode {
+				t.Fatalf("mount failure code = %q, want %q", got, testCase.wantCode)
+			}
+
+			config := commons.NewDefaultConfig()
+			entry := &managedMount{
+				info:     &api.MountInfo{MountId: "startup-failure", Attempt: 1},
+				exitDone: make(chan struct{}),
+			}
+			manager := &MountManager{config: config, repository: newTestRepository(t), now: time.Now}
+			manager.recordMountFailure(entry, 0, testCase.wantCode, "startup failure", nil)
+
+			info := manager.snapshot(entry)
+			if info.State != api.MountState_MOUNT_STATE_FAILED || info.GetLastError().GetRetryable() {
+				t.Fatalf("startup failure = state %v, retryable %v; want FAILED and non-retryable", info.State, info.GetLastError().GetRetryable())
+			}
+		})
+	}
+
+	command := exec.Command("sh", "-c", "exit 10")
+	err := command.Run()
+	if got := mountFailureCode(mountClientDAVFS, err); got != "MOUNT_COMMAND_EXITED" {
+		t.Fatalf("DAVFS mount failure code = %q", got)
 	}
 }
 

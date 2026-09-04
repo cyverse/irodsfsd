@@ -83,7 +83,7 @@ The daemon also:
 
 - Creates the PID file atomically and rejects a second live instance.
 - Stops accepting new HTTP work on `SIGTERM` or `SIGINT`.
-- Safely unmounts managed mounts during graceful shutdown while preserving their ordinary records; the next daemon start restores them. Only an explicit `Unmount` changes a record to a tombstone. The daemon exits immediately after all managed unmount operations complete.
+- Safely unmounts managed mounts during graceful shutdown while preserving their ordinary records. The next daemon start restores them only when `restore_mounts_on_restart` is enabled. Only an explicit `Unmount` changes a record to a tombstone. The daemon exits immediately after all managed unmount operations complete.
 - Sends `SIGTERM` to child process groups and terminates remaining processes as part of each bounded unmount operation.
 - Supports `run` under systemd `Type=simple`, while retaining `start` for standalone daemonization.
 
@@ -112,6 +112,12 @@ allowed_mount_root_paths:
   - "/mnt/irods"
   - "/var/lib/kubelet"
 allow_fuse_allow_other: false
+# Retry only failures after a mount has already become mounted. Initial mount
+# failures always follow retry settings.
+auto_remount: false
+# Restore ordinary persisted mounts during daemon startup. Unmount tombstones
+# are always reconciled.
+restore_mounts_on_restart: false
 
 retry:
   max_attempts: 5
@@ -259,6 +265,16 @@ the server generates one; otherwise the unique caller-supplied ID is used.
 8. Transition to `mounted` on success. On timeout, terminate the command,
    inspect the mount table, lazily detach any partial mount, and remove its
    per-mount data directory when doing so cannot discard staged DAVFS data.
+
+For the iRODSFS client only, the daemon recognizes its documented startup
+exit-status contract: `10` means configuration validation or work-directory
+creation failed, and `11` means initial iRODS authentication failed. These
+become `IRODSFS_CONFIGURATION_INVALID` and
+`IRODSFS_AUTHENTICATION_FAILED`, respectively, and are terminal (`FAILED`,
+not retryable), including for a first mount attempt. Any other non-zero
+iRODSFS exit status follows the ordinary retry policy. DAVFS and NFS helpers
+do not use this contract because their exit-status values belong to their own
+tools.
 
 DAVFS and NFS use the system mount helpers through
 `mount -t davfs ...` and `mount -t nfs ...`. These are one-shot commands, so a
@@ -624,11 +640,11 @@ API tests use `httptest`, the race detector, and fuzzing for paths, mountinfo, a
 1. Whether the daemon runs as root or a dedicated user, and whether mount ownership varies per request
 2. Firewall rules controlling access to the API service port
 3. Whether to store iRODS passwords in locally encrypted Badger or store references to an external secret manager
-4. Whether to change the default policy of unmounting physical mounts during graceful shutdown and restoring desired mounts at the next start
+4. Whether to enable restoration of desired mounts at the next start (`restore_mounts_on_restart` defaults to `false`)
 5. The supported `irodsfs` version and exact foreground CLI/config contract
 6. Whether the API accepts a complete irodsfs configuration or only an approved field allowlist
 
-Recommended initial choices are a dedicated OS account, firewall-restricted API access, a root-only configuration containing the Badger encryption key, safe unmount on shutdown followed by restoration at restart, a pinned irodsfs version, and a configuration allowlist.
+Recommended initial choices are a dedicated OS account, firewall-restricted API access, a root-only configuration containing the Badger encryption key, safe unmount on shutdown, a pinned irodsfs version, and a configuration allowlist. Enable restart restoration only when the deployment requires it.
 
 ## 21. References
 
