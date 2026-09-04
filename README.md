@@ -43,6 +43,21 @@ about each mount.
   system `mount` and `umount` utilities for DAVFS/NFS support.
 - Go 1.25+ to build from source.
 
+## Install the latest Linux release
+
+Install the latest release for the current Linux architecture with:
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/cyverse/irodsfsd/main/install.sh | bash
+```
+
+The installer downloads the matching GitHub Release archive, installs the
+systemd service, generates `recovery_encryption_key` when it is empty, and
+enables and starts `irodsfsd`. It preserves an existing
+`/etc/irodsfsd/config.yaml` during reinstalls. Install `irodsfs` separately
+and set `irodsfs_executable_path` in that configuration if it is not at
+`/usr/local/bin/irodsfs`.
+
 ## Building
 
 ```sh
@@ -129,8 +144,7 @@ irodsfsd version
 ```
 
 For a systemd-managed install, see
-[`packaging/systemd/README.md`](packaging/systemd/README.md) and
-`make install`/`make uninstall`.
+[`packaging/systemd/README.md`](packaging/systemd/README.md).
 
 ## Using the API
 

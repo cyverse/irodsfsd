@@ -1,60 +1,63 @@
-# systemd Installation
+# irodsfsd systemd installation
 
-The service uses `Type=forking` because `irodsfsd start` launches a detached
-child through go-daemonizer and exits only after the child reports readiness.
-systemd follows the child using `PIDFile=/run/irodsfsd/irodsfsd.pid`.
+## Prerequisites
+
+- A systemd-based Linux system.
+- The `irodsfs` executable installed at the path configured by
+  `irodsfs_executable_path` (the packaged default is `/usr/local/bin/irodsfs`).
 
 ## Install
 
-Build and install the binary:
+Build from source, then run:
 
 ```sh
 make build
-sudo install -o root -g root -m 0755 bin/irodsfsd /usr/bin/irodsfsd
+sudo ./packaging/systemd/install.sh
 ```
 
-Create the dedicated service account if the package or host provisioning does
-not already provide it:
+The script also works from a release archive. After extracting the archive,
+run `sudo ./install.sh`. It installs:
+
+- `/usr/bin/irodsfsd` — service binary
+- `/etc/irodsfsd/config.yaml` — configuration file
+- `/etc/systemd/system/irodsfsd.service` — systemd unit
+
+It creates the `irodsfsd` system user/group and the daemon data directories.
+An existing configuration file is preserved, so reinstalling never replaces a
+local recovery key or other local settings. The service is enabled and started
+immediately.
+
+When `recovery_encryption_key` is empty, the installer generates and stores a
+base64-encoded 32-byte key before it starts the service. Back up
+`/etc/irodsfsd/config.yaml`: this key must remain stable so persisted mount
+credentials can be decrypted after a host replacement.
+
+## Configuration
+
+Edit `/etc/irodsfsd/config.yaml` before restarting the service if the packaged
+defaults do not match the host. In particular, verify
+`irodsfs_executable_path`, the permitted mount roots, and network endpoints.
+The `pid_file` value must remain `/run/irodsfsd/irodsfsd.pid` when using the
+packaged unit because it must match systemd's `PIDFile` setting.
+
+## Service management
+
+The installer already enables and starts the service. After configuration
+changes:
 
 ```sh
-sudo useradd --system --home-dir /var/lib/irodsfsd --shell /usr/sbin/nologin irodsfsd
+sudo systemctl restart irodsfsd.service
+sudo systemctl status irodsfsd.service
+journalctl -u irodsfsd.service -f
 ```
 
-Install the configuration, environment, and unit files:
+## Uninstall
 
 ```sh
-sudo install -d -o root -g irodsfsd -m 0750 /etc/irodsfsd
-sudo install -o root -g irodsfsd -m 0640 packaging/systemd/config.yaml /etc/irodsfsd/config.yaml
-sudo install -o root -g irodsfsd -m 0640 packaging/systemd/irodsfsd.conf /etc/irodsfsd/irodsfsd.conf
-sudo install -o root -g root -m 0644 packaging/systemd/irodsfsd.service /etc/systemd/system/irodsfsd.service
+sudo systemctl disable --now irodsfsd.service
+sudo rm -f /etc/systemd/system/irodsfsd.service /usr/bin/irodsfsd
 sudo systemctl daemon-reload
-sudo systemctl enable --now irodsfsd
 ```
 
-systemd creates and owns these directories according to the unit:
-
-- `/run/irodsfsd`
-- `/var/lib/irodsfsd`
-- `/var/log/irodsfsd`
-
-## Operate
-
-```sh
-sudo systemctl status irodsfsd
-sudo systemctl restart irodsfsd
-sudo systemctl stop irodsfsd
-journalctl -u irodsfsd
-tail -F /var/log/irodsfsd/irodsfsd.log
-```
-
-Do not run `irodsfsd start` manually while the systemd unit is active. The PID
-file lock rejects the second instance, but all lifecycle operations should use
-`systemctl` once the service is installed.
-
-Configuration may be written as YAML or JSON. The parser detects the format
-from the file content, so the path in `IRODSFSD_CONFIG` does not require a
-particular extension. Invalid values prevent startup; unknown daemon-config
-fields are currently ignored for forward compatibility.
-
-The `pid_file` value must remain `/run/irodsfsd/irodsfsd.pid` when using this
-unit because it must match systemd's `PIDFile` setting.
+The configuration and data directories are intentionally preserved because
+they contain the recovery key and encrypted mount state.

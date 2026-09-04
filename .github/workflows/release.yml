@@ -1,0 +1,43 @@
+name: Release iRODSFSd
+on:
+  release:
+    types: [created]
+
+permissions:
+  contents: write
+
+jobs:
+  release-matrix:
+    name: Release Linux archive (${{ matrix.goarch }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        goarch: ["386", amd64, arm, arm64]
+    env:
+      PKG: "github.com/cyverse/irodsfsd"
+    steps:
+      - name: "Set build date"
+        run: echo "BUILD_DATE=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$GITHUB_ENV"
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - name: Build release archive
+        env:
+          GOARCH: ${{ matrix.goarch }}
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          asset_name="irodsfsd-${RELEASE_TAG}-linux-${GOARCH}"
+          stage_dir="dist/${asset_name}"
+          mkdir -p "${stage_dir}"
+          CGO_ENABLED=0 GOOS=linux GOARCH="${GOARCH}" go build \
+            -ldflags "-X ${PKG}/commons.serviceVersion=${RELEASE_TAG} -X ${PKG}/commons.gitCommit=${GITHUB_SHA} -X ${PKG}/commons.buildDate=${BUILD_DATE}" \
+            -o "${stage_dir}/irodsfsd" ./cmd/
+          install -m 0755 packaging/systemd/install.sh "${stage_dir}/install.sh"
+          install -m 0640 packaging/systemd/config.yaml "${stage_dir}/config.yaml"
+          install -m 0644 packaging/systemd/irodsfsd.service "${stage_dir}/irodsfsd.service"
+          tar -C "${stage_dir}" -czf "dist/${asset_name}.tar.gz" .
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*.tar.gz

@@ -27,8 +27,6 @@ go.work.sum
 
 # IDEs and editors
 .vscode/
-
 /bin
-/release
 *.log
 /db
