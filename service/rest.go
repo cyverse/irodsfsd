@@ -181,7 +181,7 @@ func (handler *RESTHandler) readiness(response http.ResponseWriter, request *htt
 		writeJSON(response, http.StatusServiceUnavailable, map[string]string{"status": "not_ready"})
 		return
 	}
-	if err := handler.server.Ready(request.Context()); err != nil {
+	if _, err := handler.server.Ready(request.Context(), &api.ReadyRequest{}); err != nil {
 		writeJSON(response, http.StatusServiceUnavailable, map[string]string{"status": "not_ready", "reason": err.Error()})
 		return
 	}

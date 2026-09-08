@@ -460,6 +460,22 @@ func (client *MountServiceClient) WatchMountEvents(ctx context.Context, request 
 	return apiClient.WatchMountEvents(ctx, request)
 }
 
+// Ready checks whether irodsfsd is available and its dependencies are ready.
+func (client *MountServiceClient) Ready(ctx context.Context) error {
+	if ctx == nil {
+		ctx = context.Background()
+	}
+
+	_, err := client.doWithReconnect(func() (interface{}, error) {
+		apiClient, err := client.getAPIClient()
+		if err != nil {
+			return nil, err
+		}
+		return apiClient.Ready(ctx, &api.ReadyRequest{})
+	})
+	return err
+}
+
 // Unmount requests removal of the mount identified by mountID.
 func (client *MountServiceClient) Unmount(mountID string) (*MountInfo, error) {
 	if mountID == "" {

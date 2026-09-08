@@ -244,6 +244,10 @@ message MountEvent {
   MountInfo mount = 2;
 }
 
+message ReadyRequest {}
+
+message ReadyResponse {}
+
 // MountService manages the complete lifetime of an irodsfs mount. Mount
 // creates and starts a mount; Unmount stops it and removes its stored record.
 service MountService {
@@ -252,4 +256,5 @@ service MountService {
   rpc ListMounts(ListMountsRequest) returns (ListMountsResponse) {}
   rpc GetMount(GetMountRequest) returns (GetMountResponse) {}
   rpc WatchMountEvents(WatchMountEventsRequest) returns (stream MountEvent) {}
+  rpc Ready(ReadyRequest) returns (ReadyResponse) {}
 }

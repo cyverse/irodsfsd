@@ -2107,6 +2107,78 @@ func (x *MountEvent) GetMount() *MountInfo {
 	return nil
 }
 
+type ReadyRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ReadyRequest) Reset() {
+	*x = ReadyRequest{}
+	mi := &file_service_api_api_proto_msgTypes[25]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ReadyRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ReadyRequest) ProtoMessage() {}
+
+func (x *ReadyRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_service_api_api_proto_msgTypes[25]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ReadyRequest.ProtoReflect.Descriptor instead.
+func (*ReadyRequest) Descriptor() ([]byte, []int) {
+	return file_service_api_api_proto_rawDescGZIP(), []int{25}
+}
+
+type ReadyResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ReadyResponse) Reset() {
+	*x = ReadyResponse{}
+	mi := &file_service_api_api_proto_msgTypes[26]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ReadyResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ReadyResponse) ProtoMessage() {}
+
+func (x *ReadyResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_service_api_api_proto_msgTypes[26]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ReadyResponse.ProtoReflect.Descriptor instead.
+func (*ReadyResponse) Descriptor() ([]byte, []int) {
+	return file_service_api_api_proto_rawDescGZIP(), []int{26}
+}
+
 var File_service_api_api_proto protoreflect.FileDescriptor
 
 const file_service_api_api_proto_rawDesc = "" +
@@ -2373,7 +2445,9 @@ const file_service_api_api_proto_rawDesc = "" +
 	"\n" +
 	"MountEvent\x12'\n" +
 	"\x04type\x18\x01 \x01(\x0e2\x13.api.MountEventTypeR\x04type\x12$\n" +
-	"\x05mount\x18\x02 \x01(\v2\x0e.api.MountInfoR\x05mount*\xec\x01\n" +
+	"\x05mount\x18\x02 \x01(\v2\x0e.api.MountInfoR\x05mount\"\x0e\n" +
+	"\fReadyRequest\"\x0f\n" +
+	"\rReadyResponse*\xec\x01\n" +
 	"\n" +
 	"MountState\x12\x1b\n" +
 	"\x17MOUNT_STATE_UNSPECIFIED\x10\x00\x12\x1d\n" +
@@ -2388,14 +2462,15 @@ const file_service_api_api_proto_rawDesc = "" +
 	"\x1cMOUNT_EVENT_TYPE_UNSPECIFIED\x10\x00\x12\x1d\n" +
 	"\x19MOUNT_EVENT_TYPE_SNAPSHOT\x10\x01\x12\x1c\n" +
 	"\x18MOUNT_EVENT_TYPE_UPDATED\x10\x02\x12\x1c\n" +
-	"\x18MOUNT_EVENT_TYPE_REMOVED\x10\x032\xbb\x02\n" +
+	"\x18MOUNT_EVENT_TYPE_REMOVED\x10\x032\xed\x02\n" +
 	"\fMountService\x120\n" +
 	"\x05Mount\x12\x11.api.MountRequest\x1a\x12.api.MountResponse\"\x00\x126\n" +
 	"\aUnmount\x12\x13.api.UnmountRequest\x1a\x14.api.UnmountResponse\"\x00\x12?\n" +
 	"\n" +
 	"ListMounts\x12\x16.api.ListMountsRequest\x1a\x17.api.ListMountsResponse\"\x00\x129\n" +
 	"\bGetMount\x12\x14.api.GetMountRequest\x1a\x15.api.GetMountResponse\"\x00\x12E\n" +
-	"\x10WatchMountEvents\x12\x1c.api.WatchMountEventsRequest\x1a\x0f.api.MountEvent\"\x000\x01B-Z+github.com/cyverse/irodsfsd/service/api;apib\x06proto3"
+	"\x10WatchMountEvents\x12\x1c.api.WatchMountEventsRequest\x1a\x0f.api.MountEvent\"\x000\x01\x120\n" +
+	"\x05Ready\x12\x11.api.ReadyRequest\x1a\x12.api.ReadyResponse\"\x00B-Z+github.com/cyverse/irodsfsd/service/api;apib\x06proto3"
 
 var (
 	file_service_api_api_proto_rawDescOnce sync.Once
@@ -2410,7 +2485,7 @@ func file_service_api_api_proto_rawDescGZIP() []byte {
 }
 
 var file_service_api_api_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
-var file_service_api_api_proto_msgTypes = make([]protoimpl.MessageInfo, 27)
+var file_service_api_api_proto_msgTypes = make([]protoimpl.MessageInfo, 29)
 var file_service_api_api_proto_goTypes = []any{
 	(MountState)(0),                     // 0: api.MountState
 	(MountEventType)(0),                 // 1: api.MountEventType
@@ -2439,24 +2514,26 @@ var file_service_api_api_proto_goTypes = []any{
 	(*GetMountResponse)(nil),            // 24: api.GetMountResponse
 	(*WatchMountEventsRequest)(nil),     // 25: api.WatchMountEventsRequest
 	(*MountEvent)(nil),                  // 26: api.MountEvent
-	nil,                                 // 27: api.DAVFSConfig.ConfigEntry
-	nil,                                 // 28: api.APIError.DetailsEntry
-	(*durationpb.Duration)(nil),         // 29: google.protobuf.Duration
-	(*timestamppb.Timestamp)(nil),       // 30: google.protobuf.Timestamp
+	(*ReadyRequest)(nil),                // 27: api.ReadyRequest
+	(*ReadyResponse)(nil),               // 28: api.ReadyResponse
+	nil,                                 // 29: api.DAVFSConfig.ConfigEntry
+	nil,                                 // 30: api.APIError.DetailsEntry
+	(*durationpb.Duration)(nil),         // 31: google.protobuf.Duration
+	(*timestamppb.Timestamp)(nil),       // 32: google.protobuf.Timestamp
 }
 var file_service_api_api_proto_depIdxs = []int32{
-	29, // 0: api.ConnectionConfig.creation_timeout:type_name -> google.protobuf.Duration
-	29, // 1: api.ConnectionConfig.lifespan:type_name -> google.protobuf.Duration
-	29, // 2: api.ConnectionConfig.idle_timeout:type_name -> google.protobuf.Duration
-	29, // 3: api.ConnectionConfig.operation_timeout:type_name -> google.protobuf.Duration
-	29, // 4: api.ConnectionConfig.long_operation_timeout:type_name -> google.protobuf.Duration
-	29, // 5: api.MetadataCacheTimeoutSetting.timeout:type_name -> google.protobuf.Duration
-	29, // 6: api.MemoryBackendConfig.cleanup_interval:type_name -> google.protobuf.Duration
-	29, // 7: api.MemoryBackendConfig.default_ttl:type_name -> google.protobuf.Duration
-	29, // 8: api.RistrettoBackendConfig.default_ttl:type_name -> google.protobuf.Duration
-	29, // 9: api.RedisBackendConfig.connect_timeout:type_name -> google.protobuf.Duration
-	29, // 10: api.RedisBackendConfig.command_timeout:type_name -> google.protobuf.Duration
-	29, // 11: api.RedisBackendConfig.default_ttl:type_name -> google.protobuf.Duration
+	31, // 0: api.ConnectionConfig.creation_timeout:type_name -> google.protobuf.Duration
+	31, // 1: api.ConnectionConfig.lifespan:type_name -> google.protobuf.Duration
+	31, // 2: api.ConnectionConfig.idle_timeout:type_name -> google.protobuf.Duration
+	31, // 3: api.ConnectionConfig.operation_timeout:type_name -> google.protobuf.Duration
+	31, // 4: api.ConnectionConfig.long_operation_timeout:type_name -> google.protobuf.Duration
+	31, // 5: api.MetadataCacheTimeoutSetting.timeout:type_name -> google.protobuf.Duration
+	31, // 6: api.MemoryBackendConfig.cleanup_interval:type_name -> google.protobuf.Duration
+	31, // 7: api.MemoryBackendConfig.default_ttl:type_name -> google.protobuf.Duration
+	31, // 8: api.RistrettoBackendConfig.default_ttl:type_name -> google.protobuf.Duration
+	31, // 9: api.RedisBackendConfig.connect_timeout:type_name -> google.protobuf.Duration
+	31, // 10: api.RedisBackendConfig.command_timeout:type_name -> google.protobuf.Duration
+	31, // 11: api.RedisBackendConfig.default_ttl:type_name -> google.protobuf.Duration
 	6,  // 12: api.CacheBackendConfig.memory:type_name -> api.MemoryBackendConfig
 	7,  // 13: api.CacheBackendConfig.ristretto:type_name -> api.RistrettoBackendConfig
 	8,  // 14: api.CacheBackendConfig.redis:type_name -> api.RedisBackendConfig
@@ -2467,19 +2544,19 @@ var file_service_api_api_proto_depIdxs = []int32{
 	4,  // 19: api.IRODSFSConfig.metadata_connection:type_name -> api.ConnectionConfig
 	4,  // 20: api.IRODSFSConfig.io_connection:type_name -> api.ConnectionConfig
 	10, // 21: api.IRODSFSConfig.cache:type_name -> api.CacheConfig
-	27, // 22: api.DAVFSConfig.config:type_name -> api.DAVFSConfig.ConfigEntry
+	29, // 22: api.DAVFSConfig.config:type_name -> api.DAVFSConfig.ConfigEntry
 	11, // 23: api.MountConfig.irodsfs:type_name -> api.IRODSFSConfig
 	12, // 24: api.MountConfig.davfs:type_name -> api.DAVFSConfig
 	13, // 25: api.MountConfig.nfs:type_name -> api.NFSConfig
-	28, // 26: api.APIError.details:type_name -> api.APIError.DetailsEntry
+	30, // 26: api.APIError.details:type_name -> api.APIError.DetailsEntry
 	0,  // 27: api.MountInfo.state:type_name -> api.MountState
 	14, // 28: api.MountInfo.config:type_name -> api.MountConfig
 	15, // 29: api.MountInfo.last_error:type_name -> api.APIError
-	30, // 30: api.MountInfo.created_at:type_name -> google.protobuf.Timestamp
-	30, // 31: api.MountInfo.updated_at:type_name -> google.protobuf.Timestamp
-	30, // 32: api.MountInfo.mounted_at:type_name -> google.protobuf.Timestamp
-	30, // 33: api.MountInfo.unmounted_at:type_name -> google.protobuf.Timestamp
-	30, // 34: api.MountInfo.next_retry_at:type_name -> google.protobuf.Timestamp
+	32, // 30: api.MountInfo.created_at:type_name -> google.protobuf.Timestamp
+	32, // 31: api.MountInfo.updated_at:type_name -> google.protobuf.Timestamp
+	32, // 32: api.MountInfo.mounted_at:type_name -> google.protobuf.Timestamp
+	32, // 33: api.MountInfo.unmounted_at:type_name -> google.protobuf.Timestamp
+	32, // 34: api.MountInfo.next_retry_at:type_name -> google.protobuf.Timestamp
 	14, // 35: api.MountRequest.config:type_name -> api.MountConfig
 	16, // 36: api.MountResponse.mount:type_name -> api.MountInfo
 	16, // 37: api.UnmountResponse.mount:type_name -> api.MountInfo
@@ -2493,13 +2570,15 @@ var file_service_api_api_proto_depIdxs = []int32{
 	21, // 45: api.MountService.ListMounts:input_type -> api.ListMountsRequest
 	23, // 46: api.MountService.GetMount:input_type -> api.GetMountRequest
 	25, // 47: api.MountService.WatchMountEvents:input_type -> api.WatchMountEventsRequest
-	18, // 48: api.MountService.Mount:output_type -> api.MountResponse
-	20, // 49: api.MountService.Unmount:output_type -> api.UnmountResponse
-	22, // 50: api.MountService.ListMounts:output_type -> api.ListMountsResponse
-	24, // 51: api.MountService.GetMount:output_type -> api.GetMountResponse
-	26, // 52: api.MountService.WatchMountEvents:output_type -> api.MountEvent
-	48, // [48:53] is the sub-list for method output_type
-	43, // [43:48] is the sub-list for method input_type
+	27, // 48: api.MountService.Ready:input_type -> api.ReadyRequest
+	18, // 49: api.MountService.Mount:output_type -> api.MountResponse
+	20, // 50: api.MountService.Unmount:output_type -> api.UnmountResponse
+	22, // 51: api.MountService.ListMounts:output_type -> api.ListMountsResponse
+	24, // 52: api.MountService.GetMount:output_type -> api.GetMountResponse
+	26, // 53: api.MountService.WatchMountEvents:output_type -> api.MountEvent
+	28, // 54: api.MountService.Ready:output_type -> api.ReadyResponse
+	49, // [49:55] is the sub-list for method output_type
+	43, // [43:49] is the sub-list for method input_type
 	43, // [43:43] is the sub-list for extension type_name
 	43, // [43:43] is the sub-list for extension extendee
 	0,  // [0:43] is the sub-list for field type_name
@@ -2533,7 +2612,7 @@ func file_service_api_api_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_service_api_api_proto_rawDesc), len(file_service_api_api_proto_rawDesc)),
 			NumEnums:      2,
-			NumMessages:   27,
+			NumMessages:   29,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

@@ -116,13 +116,13 @@ func (server *MountServer) ListMounts(ctx context.Context, request *api.ListMoun
 	return &api.ListMountsResponse{Mounts: mounts}, nil
 }
 
-// Ready reports whether the underlying manager's dependencies are
-// currently usable. It is not part of the gRPC MountService contract
-// (design.md keeps health/readiness as plain REST endpoints); it exists so
-// the REST handler can reach the manager without depending on the
-// concrete *MountManager type.
-func (server *MountServer) Ready(ctx context.Context) error {
-	return server.manager.Ready(ctx)
+// Ready reports whether the underlying manager's dependencies are currently
+// usable.
+func (server *MountServer) Ready(ctx context.Context, request *api.ReadyRequest) (*api.ReadyResponse, error) {
+	if err := server.manager.Ready(ctx); err != nil {
+		return nil, status.Error(codes.Unavailable, "irodsfsd is not ready")
+	}
+	return &api.ReadyResponse{}, nil
 }
 
 func (server *MountServer) GetMount(ctx context.Context, request *api.GetMountRequest) (*api.GetMountResponse, error) {

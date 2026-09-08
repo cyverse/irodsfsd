@@ -300,3 +300,23 @@ func TestRESTReadinessReflectsManagerReadiness(t *testing.T) {
 		t.Fatalf("readyz status = %d, want 503 when the manager is not ready, body = %s", response.Code, response.Body.String())
 	}
 }
+
+func TestGRPCReadinessReflectsManagerReadiness(t *testing.T) {
+	fake := newFakeMountOperations()
+	server, err := newMountServer(fake)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if _, err := server.Ready(context.Background(), &api.ReadyRequest{}); err != nil {
+		t.Fatalf("Ready() error = %v", err)
+	}
+
+	fake.mutex.Lock()
+	fake.readyErr = errors.New("repository is unreachable")
+	fake.mutex.Unlock()
+
+	if _, err := server.Ready(context.Background(), &api.ReadyRequest{}); status.Code(err) != codes.Unavailable {
+		t.Fatalf("Ready() error = %v, want Unavailable", err)
+	}
+}

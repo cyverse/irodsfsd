@@ -1,5 +1,5 @@
 # irodsfsd accepts this YAML format and the equivalent JSON object.
-service_endpoint: tcp://0.0.0.0:13020
+service_endpoint: tcp://127.0.0.1:13020
 debug: false
 irodsfs_executable_path: /usr/local/bin/irodsfs
 mount_executable_path: /usr/bin/mount

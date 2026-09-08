@@ -19,6 +19,7 @@ func TestMountServiceMethods(t *testing.T) {
 		"ListMounts",
 		"GetMount",
 		"WatchMountEvents",
+		"Ready",
 	}
 	got := make([]string, 0, service.Methods().Len())
 	for index := 0; index < service.Methods().Len(); index++ {

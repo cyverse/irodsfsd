@@ -64,6 +64,13 @@ func (client *testMountAPIClient) ListMounts(ctx context.Context, request *api.L
 	return client.server.ListMounts(ctx, request)
 }
 
+func (client *testMountAPIClient) Ready(_ context.Context, _ *api.ReadyRequest, _ ...grpc.CallOption) (*api.ReadyResponse, error) {
+	if client.unavailable {
+		return nil, status.Error(codes.Unavailable, "test server unavailable")
+	}
+	return &api.ReadyResponse{}, nil
+}
+
 func (client *testMountAPIClient) GetMount(ctx context.Context, request *api.GetMountRequest, _ ...grpc.CallOption) (*api.GetMountResponse, error) {
 	if client.unavailable {
 		return nil, status.Error(codes.Unavailable, "test server unavailable")
@@ -150,6 +157,9 @@ func (server *testMountServer) GetMount(_ context.Context, request *api.GetMount
 func TestMountServiceClientLifecycleAndOperations(t *testing.T) {
 	client := startTestClient(t)
 	config := &api.MountConfig{MountPath: "/mnt/test"}
+	if err := client.Ready(context.Background()); err != nil {
+		t.Fatalf("Ready() error = %v", err)
+	}
 
 	generated, err := client.Mount(config, false)
 	if err != nil {
