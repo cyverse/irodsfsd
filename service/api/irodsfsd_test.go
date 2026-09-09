@@ -8,7 +8,7 @@ import (
 )
 
 func TestMountServiceMethods(t *testing.T) {
-	service := File_service_api_api_proto.Services().ByName("MountService")
+	service := File_service_api_daemon_proto.Services().ByName("MountService")
 	if service == nil {
 		t.Fatal("MountService descriptor is missing")
 	}
@@ -43,7 +43,7 @@ func TestMountInfoReusesConfig(t *testing.T) {
 	if configField == nil {
 		t.Fatal("MountInfo.config is missing")
 	}
-	if got, want := configField.Message().FullName(), protoreflect.FullName("api.MountConfig"); got != want {
+	if got, want := configField.Message().FullName(), protoreflect.FullName("cyverse.irodsfs.daemon.v1.MountConfig"); got != want {
 		t.Errorf("MountInfo.config type = %s, want %s", got, want)
 	}
 }

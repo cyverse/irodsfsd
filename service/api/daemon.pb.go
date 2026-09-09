@@ -2,7 +2,7 @@
 // versions:
 // 	protoc-gen-go v1.36.11
 // 	protoc        v3.21.12
-// source: service/api/api.proto
+// source: service/api/daemon.proto
 
 package api
 
@@ -71,11 +71,11 @@ func (x MountState) String() string {
 }
 
 func (MountState) Descriptor() protoreflect.EnumDescriptor {
-	return file_service_api_api_proto_enumTypes[0].Descriptor()
+	return file_service_api_daemon_proto_enumTypes[0].Descriptor()
 }
 
 func (MountState) Type() protoreflect.EnumType {
-	return &file_service_api_api_proto_enumTypes[0]
+	return &file_service_api_daemon_proto_enumTypes[0]
 }
 
 func (x MountState) Number() protoreflect.EnumNumber {
@@ -84,7 +84,7 @@ func (x MountState) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use MountState.Descriptor instead.
 func (MountState) EnumDescriptor() ([]byte, []int) {
-	return file_service_api_api_proto_rawDescGZIP(), []int{0}
+	return file_service_api_daemon_proto_rawDescGZIP(), []int{0}
 }
 
 type MountEventType int32
@@ -123,11 +123,11 @@ func (x MountEventType) String() string {
 }
 
 func (MountEventType) Descriptor() protoreflect.EnumDescriptor {
-	return file_service_api_api_proto_enumTypes[1].Descriptor()
+	return file_service_api_daemon_proto_enumTypes[1].Descriptor()
 }
 
 func (MountEventType) Type() protoreflect.EnumType {
-	return &file_service_api_api_proto_enumTypes[1]
+	return &file_service_api_daemon_proto_enumTypes[1]
 }
 
 func (x MountEventType) Number() protoreflect.EnumNumber {
@@ -136,7 +136,7 @@ func (x MountEventType) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use MountEventType.Descriptor instead.
 func (MountEventType) EnumDescriptor() ([]byte, []int) {
-	return file_service_api_api_proto_rawDescGZIP(), []int{1}
+	return file_service_api_daemon_proto_rawDescGZIP(), []int{1}
 }
 
 // Account is used by both requests and responses. Servers must redact
@@ -179,7 +179,7 @@ type Account struct {
 
 func (x *Account) Reset() {
 	*x = Account{}
-	mi := &file_service_api_api_proto_msgTypes[0]
+	mi := &file_service_api_daemon_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -191,7 +191,7 @@ func (x *Account) String() string {
 func (*Account) ProtoMessage() {}
 
 func (x *Account) ProtoReflect() protoreflect.Message {
-	mi := &file_service_api_api_proto_msgTypes[0]
+	mi := &file_service_api_daemon_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -204,7 +204,7 @@ func (x *Account) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Account.ProtoReflect.Descriptor instead.
 func (*Account) Descriptor() ([]byte, []int) {
-	return file_service_api_api_proto_rawDescGZIP(), []int{0}
+	return file_service_api_daemon_proto_rawDescGZIP(), []int{0}
 }
 
 func (x *Account) GetIrodsAuthenticationScheme() string {
@@ -424,7 +424,7 @@ type PathMapping struct {
 
 func (x *PathMapping) Reset() {
 	*x = PathMapping{}
-	mi := &file_service_api_api_proto_msgTypes[1]
+	mi := &file_service_api_daemon_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -436,7 +436,7 @@ func (x *PathMapping) String() string {
 func (*PathMapping) ProtoMessage() {}
 
 func (x *PathMapping) ProtoReflect() protoreflect.Message {
-	mi := &file_service_api_api_proto_msgTypes[1]
+	mi := &file_service_api_daemon_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -449,7 +449,7 @@ func (x *PathMapping) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PathMapping.ProtoReflect.Descriptor instead.
 func (*PathMapping) Descriptor() ([]byte, []int) {
-	return file_service_api_api_proto_rawDescGZIP(), []int{1}
+	return file_service_api_daemon_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *PathMapping) GetIrodsPath() string {
@@ -512,7 +512,7 @@ type ConnectionConfig struct {
 
 func (x *ConnectionConfig) Reset() {
 	*x = ConnectionConfig{}
-	mi := &file_service_api_api_proto_msgTypes[2]
+	mi := &file_service_api_daemon_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -524,7 +524,7 @@ func (x *ConnectionConfig) String() string {
 func (*ConnectionConfig) ProtoMessage() {}
 
 func (x *ConnectionConfig) ProtoReflect() protoreflect.Message {
-	mi := &file_service_api_api_proto_msgTypes[2]
+	mi := &file_service_api_daemon_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -537,7 +537,7 @@ func (x *ConnectionConfig) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ConnectionConfig.ProtoReflect.Descriptor instead.
 func (*ConnectionConfig) Descriptor() ([]byte, []int) {
-	return file_service_api_api_proto_rawDescGZIP(), []int{2}
+	return file_service_api_daemon_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *ConnectionConfig) GetCreationTimeout() *durationpb.Duration {
@@ -621,7 +621,7 @@ type MetadataCacheTimeoutSetting struct {
 
 func (x *MetadataCacheTimeoutSetting) Reset() {
 	*x = MetadataCacheTimeoutSetting{}
-	mi := &file_service_api_api_proto_msgTypes[3]
+	mi := &file_service_api_daemon_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -633,7 +633,7 @@ func (x *MetadataCacheTimeoutSetting) String() string {
 func (*MetadataCacheTimeoutSetting) ProtoMessage() {}
 
 func (x *MetadataCacheTimeoutSetting) ProtoReflect() protoreflect.Message {
-	mi := &file_service_api_api_proto_msgTypes[3]
+	mi := &file_service_api_daemon_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -646,7 +646,7 @@ func (x *MetadataCacheTimeoutSetting) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MetadataCacheTimeoutSetting.ProtoReflect.Descriptor instead.
 func (*MetadataCacheTimeoutSetting) Descriptor() ([]byte, []int) {
-	return file_service_api_api_proto_rawDescGZIP(), []int{3}
+	return file_service_api_daemon_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *MetadataCacheTimeoutSetting) GetPath() string {
@@ -680,7 +680,7 @@ type MemoryBackendConfig struct {
 
 func (x *MemoryBackendConfig) Reset() {
 	*x = MemoryBackendConfig{}
-	mi := &file_service_api_api_proto_msgTypes[4]
+	mi := &file_service_api_daemon_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -692,7 +692,7 @@ func (x *MemoryBackendConfig) String() string {
 func (*MemoryBackendConfig) ProtoMessage() {}
 
 func (x *MemoryBackendConfig) ProtoReflect() protoreflect.Message {
-	mi := &file_service_api_api_proto_msgTypes[4]
+	mi := &file_service_api_daemon_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -705,7 +705,7 @@ func (x *MemoryBackendConfig) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MemoryBackendConfig.ProtoReflect.Descriptor instead.
 func (*MemoryBackendConfig) Descriptor() ([]byte, []int) {
-	return file_service_api_api_proto_rawDescGZIP(), []int{4}
+	return file_service_api_daemon_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *MemoryBackendConfig) GetCleanupInterval() *durationpb.Duration {
@@ -734,7 +734,7 @@ type RistrettoBackendConfig struct {
 
 func (x *RistrettoBackendConfig) Reset() {
 	*x = RistrettoBackendConfig{}
-	mi := &file_service_api_api_proto_msgTypes[5]
+	mi := &file_service_api_daemon_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -746,7 +746,7 @@ func (x *RistrettoBackendConfig) String() string {
 func (*RistrettoBackendConfig) ProtoMessage() {}
 
 func (x *RistrettoBackendConfig) ProtoReflect() protoreflect.Message {
-	mi := &file_service_api_api_proto_msgTypes[5]
+	mi := &file_service_api_daemon_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -759,7 +759,7 @@ func (x *RistrettoBackendConfig) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RistrettoBackendConfig.ProtoReflect.Descriptor instead.
 func (*RistrettoBackendConfig) Descriptor() ([]byte, []int) {
-	return file_service_api_api_proto_rawDescGZIP(), []int{5}
+	return file_service_api_daemon_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *RistrettoBackendConfig) GetMaxEntries() int64 {
@@ -807,7 +807,7 @@ type RedisBackendConfig struct {
 
 func (x *RedisBackendConfig) Reset() {
 	*x = RedisBackendConfig{}
-	mi := &file_service_api_api_proto_msgTypes[6]
+	mi := &file_service_api_daemon_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -819,7 +819,7 @@ func (x *RedisBackendConfig) String() string {
 func (*RedisBackendConfig) ProtoMessage() {}
 
 func (x *RedisBackendConfig) ProtoReflect() protoreflect.Message {
-	mi := &file_service_api_api_proto_msgTypes[6]
+	mi := &file_service_api_daemon_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -832,7 +832,7 @@ func (x *RedisBackendConfig) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RedisBackendConfig.ProtoReflect.Descriptor instead.
 func (*RedisBackendConfig) Descriptor() ([]byte, []int) {
-	return file_service_api_api_proto_rawDescGZIP(), []int{6}
+	return file_service_api_daemon_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *RedisBackendConfig) GetAddress() string {
@@ -910,7 +910,7 @@ type CacheBackendConfig struct {
 
 func (x *CacheBackendConfig) Reset() {
 	*x = CacheBackendConfig{}
-	mi := &file_service_api_api_proto_msgTypes[7]
+	mi := &file_service_api_daemon_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -922,7 +922,7 @@ func (x *CacheBackendConfig) String() string {
 func (*CacheBackendConfig) ProtoMessage() {}
 
 func (x *CacheBackendConfig) ProtoReflect() protoreflect.Message {
-	mi := &file_service_api_api_proto_msgTypes[7]
+	mi := &file_service_api_daemon_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -935,7 +935,7 @@ func (x *CacheBackendConfig) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CacheBackendConfig.ProtoReflect.Descriptor instead.
 func (*CacheBackendConfig) Descriptor() ([]byte, []int) {
-	return file_service_api_api_proto_rawDescGZIP(), []int{7}
+	return file_service_api_daemon_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *CacheBackendConfig) GetType() string {
@@ -977,7 +977,7 @@ type CacheConfig struct {
 
 func (x *CacheConfig) Reset() {
 	*x = CacheConfig{}
-	mi := &file_service_api_api_proto_msgTypes[8]
+	mi := &file_service_api_daemon_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -989,7 +989,7 @@ func (x *CacheConfig) String() string {
 func (*CacheConfig) ProtoMessage() {}
 
 func (x *CacheConfig) ProtoReflect() protoreflect.Message {
-	mi := &file_service_api_api_proto_msgTypes[8]
+	mi := &file_service_api_daemon_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1002,7 +1002,7 @@ func (x *CacheConfig) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CacheConfig.ProtoReflect.Descriptor instead.
 func (*CacheConfig) Descriptor() ([]byte, []int) {
-	return file_service_api_api_proto_rawDescGZIP(), []int{8}
+	return file_service_api_daemon_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *CacheConfig) GetMetadataTimeoutSettings() []*MetadataCacheTimeoutSetting {
@@ -1049,7 +1049,7 @@ type IRODSFSConfig struct {
 
 func (x *IRODSFSConfig) Reset() {
 	*x = IRODSFSConfig{}
-	mi := &file_service_api_api_proto_msgTypes[9]
+	mi := &file_service_api_daemon_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1061,7 +1061,7 @@ func (x *IRODSFSConfig) String() string {
 func (*IRODSFSConfig) ProtoMessage() {}
 
 func (x *IRODSFSConfig) ProtoReflect() protoreflect.Message {
-	mi := &file_service_api_api_proto_msgTypes[9]
+	mi := &file_service_api_daemon_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1074,7 +1074,7 @@ func (x *IRODSFSConfig) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use IRODSFSConfig.ProtoReflect.Descriptor instead.
 func (*IRODSFSConfig) Descriptor() ([]byte, []int) {
-	return file_service_api_api_proto_rawDescGZIP(), []int{9}
+	return file_service_api_daemon_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *IRODSFSConfig) GetAccount() *Account {
@@ -1187,7 +1187,7 @@ type DAVFSConfig struct {
 
 func (x *DAVFSConfig) Reset() {
 	*x = DAVFSConfig{}
-	mi := &file_service_api_api_proto_msgTypes[10]
+	mi := &file_service_api_daemon_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1199,7 +1199,7 @@ func (x *DAVFSConfig) String() string {
 func (*DAVFSConfig) ProtoMessage() {}
 
 func (x *DAVFSConfig) ProtoReflect() protoreflect.Message {
-	mi := &file_service_api_api_proto_msgTypes[10]
+	mi := &file_service_api_daemon_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1212,7 +1212,7 @@ func (x *DAVFSConfig) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DAVFSConfig.ProtoReflect.Descriptor instead.
 func (*DAVFSConfig) Descriptor() ([]byte, []int) {
-	return file_service_api_api_proto_rawDescGZIP(), []int{10}
+	return file_service_api_daemon_proto_rawDescGZIP(), []int{10}
 }
 
 func (x *DAVFSConfig) GetUrl() string {
@@ -1254,7 +1254,7 @@ type NFSConfig struct {
 
 func (x *NFSConfig) Reset() {
 	*x = NFSConfig{}
-	mi := &file_service_api_api_proto_msgTypes[11]
+	mi := &file_service_api_daemon_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1266,7 +1266,7 @@ func (x *NFSConfig) String() string {
 func (*NFSConfig) ProtoMessage() {}
 
 func (x *NFSConfig) ProtoReflect() protoreflect.Message {
-	mi := &file_service_api_api_proto_msgTypes[11]
+	mi := &file_service_api_daemon_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1279,7 +1279,7 @@ func (x *NFSConfig) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use NFSConfig.ProtoReflect.Descriptor instead.
 func (*NFSConfig) Descriptor() ([]byte, []int) {
-	return file_service_api_api_proto_rawDescGZIP(), []int{11}
+	return file_service_api_daemon_proto_rawDescGZIP(), []int{11}
 }
 
 func (x *NFSConfig) GetHost() string {
@@ -1322,7 +1322,7 @@ type MountConfig struct {
 
 func (x *MountConfig) Reset() {
 	*x = MountConfig{}
-	mi := &file_service_api_api_proto_msgTypes[12]
+	mi := &file_service_api_daemon_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1334,7 +1334,7 @@ func (x *MountConfig) String() string {
 func (*MountConfig) ProtoMessage() {}
 
 func (x *MountConfig) ProtoReflect() protoreflect.Message {
-	mi := &file_service_api_api_proto_msgTypes[12]
+	mi := &file_service_api_daemon_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1347,7 +1347,7 @@ func (x *MountConfig) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MountConfig.ProtoReflect.Descriptor instead.
 func (*MountConfig) Descriptor() ([]byte, []int) {
-	return file_service_api_api_proto_rawDescGZIP(), []int{12}
+	return file_service_api_daemon_proto_rawDescGZIP(), []int{12}
 }
 
 func (x *MountConfig) GetMountPath() string {
@@ -1439,7 +1439,7 @@ type APIError struct {
 
 func (x *APIError) Reset() {
 	*x = APIError{}
-	mi := &file_service_api_api_proto_msgTypes[13]
+	mi := &file_service_api_daemon_proto_msgTypes[13]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1451,7 +1451,7 @@ func (x *APIError) String() string {
 func (*APIError) ProtoMessage() {}
 
 func (x *APIError) ProtoReflect() protoreflect.Message {
-	mi := &file_service_api_api_proto_msgTypes[13]
+	mi := &file_service_api_daemon_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1464,7 +1464,7 @@ func (x *APIError) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use APIError.ProtoReflect.Descriptor instead.
 func (*APIError) Descriptor() ([]byte, []int) {
-	return file_service_api_api_proto_rawDescGZIP(), []int{13}
+	return file_service_api_daemon_proto_rawDescGZIP(), []int{13}
 }
 
 func (x *APIError) GetCode() string {
@@ -1500,7 +1500,7 @@ func (x *APIError) GetDetails() map[string]string {
 type MountInfo struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	MountId       string                 `protobuf:"bytes,1,opt,name=mount_id,json=mountId,proto3" json:"mount_id,omitempty"`
-	State         MountState             `protobuf:"varint,2,opt,name=state,proto3,enum=api.MountState" json:"state,omitempty"`
+	State         MountState             `protobuf:"varint,2,opt,name=state,proto3,enum=cyverse.irodsfs.daemon.v1.MountState" json:"state,omitempty"`
 	Config        *MountConfig           `protobuf:"bytes,3,opt,name=config,proto3" json:"config,omitempty"`
 	Attempt       int32                  `protobuf:"varint,4,opt,name=attempt,proto3" json:"attempt,omitempty"`
 	LastError     *APIError              `protobuf:"bytes,5,opt,name=last_error,json=lastError,proto3" json:"last_error,omitempty"`
@@ -1516,7 +1516,7 @@ type MountInfo struct {
 
 func (x *MountInfo) Reset() {
 	*x = MountInfo{}
-	mi := &file_service_api_api_proto_msgTypes[14]
+	mi := &file_service_api_daemon_proto_msgTypes[14]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1528,7 +1528,7 @@ func (x *MountInfo) String() string {
 func (*MountInfo) ProtoMessage() {}
 
 func (x *MountInfo) ProtoReflect() protoreflect.Message {
-	mi := &file_service_api_api_proto_msgTypes[14]
+	mi := &file_service_api_daemon_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1541,7 +1541,7 @@ func (x *MountInfo) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MountInfo.ProtoReflect.Descriptor instead.
 func (*MountInfo) Descriptor() ([]byte, []int) {
-	return file_service_api_api_proto_rawDescGZIP(), []int{14}
+	return file_service_api_daemon_proto_rawDescGZIP(), []int{14}
 }
 
 func (x *MountInfo) GetMountId() string {
@@ -1632,7 +1632,7 @@ type MountRequest struct {
 
 func (x *MountRequest) Reset() {
 	*x = MountRequest{}
-	mi := &file_service_api_api_proto_msgTypes[15]
+	mi := &file_service_api_daemon_proto_msgTypes[15]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1644,7 +1644,7 @@ func (x *MountRequest) String() string {
 func (*MountRequest) ProtoMessage() {}
 
 func (x *MountRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_service_api_api_proto_msgTypes[15]
+	mi := &file_service_api_daemon_proto_msgTypes[15]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1657,7 +1657,7 @@ func (x *MountRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MountRequest.ProtoReflect.Descriptor instead.
 func (*MountRequest) Descriptor() ([]byte, []int) {
-	return file_service_api_api_proto_rawDescGZIP(), []int{15}
+	return file_service_api_daemon_proto_rawDescGZIP(), []int{15}
 }
 
 func (x *MountRequest) GetMountId() string {
@@ -1683,7 +1683,7 @@ type MountResponse struct {
 
 func (x *MountResponse) Reset() {
 	*x = MountResponse{}
-	mi := &file_service_api_api_proto_msgTypes[16]
+	mi := &file_service_api_daemon_proto_msgTypes[16]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1695,7 +1695,7 @@ func (x *MountResponse) String() string {
 func (*MountResponse) ProtoMessage() {}
 
 func (x *MountResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_service_api_api_proto_msgTypes[16]
+	mi := &file_service_api_daemon_proto_msgTypes[16]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1708,7 +1708,7 @@ func (x *MountResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MountResponse.ProtoReflect.Descriptor instead.
 func (*MountResponse) Descriptor() ([]byte, []int) {
-	return file_service_api_api_proto_rawDescGZIP(), []int{16}
+	return file_service_api_daemon_proto_rawDescGZIP(), []int{16}
 }
 
 func (x *MountResponse) GetMount() *MountInfo {
@@ -1727,7 +1727,7 @@ type UnmountRequest struct {
 
 func (x *UnmountRequest) Reset() {
 	*x = UnmountRequest{}
-	mi := &file_service_api_api_proto_msgTypes[17]
+	mi := &file_service_api_daemon_proto_msgTypes[17]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1739,7 +1739,7 @@ func (x *UnmountRequest) String() string {
 func (*UnmountRequest) ProtoMessage() {}
 
 func (x *UnmountRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_service_api_api_proto_msgTypes[17]
+	mi := &file_service_api_daemon_proto_msgTypes[17]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1752,7 +1752,7 @@ func (x *UnmountRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UnmountRequest.ProtoReflect.Descriptor instead.
 func (*UnmountRequest) Descriptor() ([]byte, []int) {
-	return file_service_api_api_proto_rawDescGZIP(), []int{17}
+	return file_service_api_daemon_proto_rawDescGZIP(), []int{17}
 }
 
 func (x *UnmountRequest) GetMountId() string {
@@ -1772,7 +1772,7 @@ type UnmountResponse struct {
 
 func (x *UnmountResponse) Reset() {
 	*x = UnmountResponse{}
-	mi := &file_service_api_api_proto_msgTypes[18]
+	mi := &file_service_api_daemon_proto_msgTypes[18]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1784,7 +1784,7 @@ func (x *UnmountResponse) String() string {
 func (*UnmountResponse) ProtoMessage() {}
 
 func (x *UnmountResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_service_api_api_proto_msgTypes[18]
+	mi := &file_service_api_daemon_proto_msgTypes[18]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1797,7 +1797,7 @@ func (x *UnmountResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UnmountResponse.ProtoReflect.Descriptor instead.
 func (*UnmountResponse) Descriptor() ([]byte, []int) {
-	return file_service_api_api_proto_rawDescGZIP(), []int{18}
+	return file_service_api_daemon_proto_rawDescGZIP(), []int{18}
 }
 
 func (x *UnmountResponse) GetMount() *MountInfo {
@@ -1809,7 +1809,7 @@ func (x *UnmountResponse) GetMount() *MountInfo {
 
 type ListMountsRequest struct {
 	state           protoimpl.MessageState `protogen:"open.v1"`
-	States          []MountState           `protobuf:"varint,1,rep,packed,name=states,proto3,enum=api.MountState" json:"states,omitempty"`
+	States          []MountState           `protobuf:"varint,1,rep,packed,name=states,proto3,enum=cyverse.irodsfs.daemon.v1.MountState" json:"states,omitempty"`
 	MountPathPrefix *string                `protobuf:"bytes,2,opt,name=mount_path_prefix,json=mountPathPrefix,proto3,oneof" json:"mount_path_prefix,omitempty"`
 	ClientUser      *string                `protobuf:"bytes,3,opt,name=client_user,json=clientUser,proto3,oneof" json:"client_user,omitempty"`
 	unknownFields   protoimpl.UnknownFields
@@ -1818,7 +1818,7 @@ type ListMountsRequest struct {
 
 func (x *ListMountsRequest) Reset() {
 	*x = ListMountsRequest{}
-	mi := &file_service_api_api_proto_msgTypes[19]
+	mi := &file_service_api_daemon_proto_msgTypes[19]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1830,7 +1830,7 @@ func (x *ListMountsRequest) String() string {
 func (*ListMountsRequest) ProtoMessage() {}
 
 func (x *ListMountsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_service_api_api_proto_msgTypes[19]
+	mi := &file_service_api_daemon_proto_msgTypes[19]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1843,7 +1843,7 @@ func (x *ListMountsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListMountsRequest.ProtoReflect.Descriptor instead.
 func (*ListMountsRequest) Descriptor() ([]byte, []int) {
-	return file_service_api_api_proto_rawDescGZIP(), []int{19}
+	return file_service_api_daemon_proto_rawDescGZIP(), []int{19}
 }
 
 func (x *ListMountsRequest) GetStates() []MountState {
@@ -1876,7 +1876,7 @@ type ListMountsResponse struct {
 
 func (x *ListMountsResponse) Reset() {
 	*x = ListMountsResponse{}
-	mi := &file_service_api_api_proto_msgTypes[20]
+	mi := &file_service_api_daemon_proto_msgTypes[20]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1888,7 +1888,7 @@ func (x *ListMountsResponse) String() string {
 func (*ListMountsResponse) ProtoMessage() {}
 
 func (x *ListMountsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_service_api_api_proto_msgTypes[20]
+	mi := &file_service_api_daemon_proto_msgTypes[20]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1901,7 +1901,7 @@ func (x *ListMountsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListMountsResponse.ProtoReflect.Descriptor instead.
 func (*ListMountsResponse) Descriptor() ([]byte, []int) {
-	return file_service_api_api_proto_rawDescGZIP(), []int{20}
+	return file_service_api_daemon_proto_rawDescGZIP(), []int{20}
 }
 
 func (x *ListMountsResponse) GetMounts() []*MountInfo {
@@ -1920,7 +1920,7 @@ type GetMountRequest struct {
 
 func (x *GetMountRequest) Reset() {
 	*x = GetMountRequest{}
-	mi := &file_service_api_api_proto_msgTypes[21]
+	mi := &file_service_api_daemon_proto_msgTypes[21]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1932,7 +1932,7 @@ func (x *GetMountRequest) String() string {
 func (*GetMountRequest) ProtoMessage() {}
 
 func (x *GetMountRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_service_api_api_proto_msgTypes[21]
+	mi := &file_service_api_daemon_proto_msgTypes[21]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1945,7 +1945,7 @@ func (x *GetMountRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetMountRequest.ProtoReflect.Descriptor instead.
 func (*GetMountRequest) Descriptor() ([]byte, []int) {
-	return file_service_api_api_proto_rawDescGZIP(), []int{21}
+	return file_service_api_daemon_proto_rawDescGZIP(), []int{21}
 }
 
 func (x *GetMountRequest) GetMountId() string {
@@ -1964,7 +1964,7 @@ type GetMountResponse struct {
 
 func (x *GetMountResponse) Reset() {
 	*x = GetMountResponse{}
-	mi := &file_service_api_api_proto_msgTypes[22]
+	mi := &file_service_api_daemon_proto_msgTypes[22]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1976,7 +1976,7 @@ func (x *GetMountResponse) String() string {
 func (*GetMountResponse) ProtoMessage() {}
 
 func (x *GetMountResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_service_api_api_proto_msgTypes[22]
+	mi := &file_service_api_daemon_proto_msgTypes[22]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1989,7 +1989,7 @@ func (x *GetMountResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetMountResponse.ProtoReflect.Descriptor instead.
 func (*GetMountResponse) Descriptor() ([]byte, []int) {
-	return file_service_api_api_proto_rawDescGZIP(), []int{22}
+	return file_service_api_daemon_proto_rawDescGZIP(), []int{22}
 }
 
 func (x *GetMountResponse) GetMount() *MountInfo {
@@ -2011,7 +2011,7 @@ type WatchMountEventsRequest struct {
 
 func (x *WatchMountEventsRequest) Reset() {
 	*x = WatchMountEventsRequest{}
-	mi := &file_service_api_api_proto_msgTypes[23]
+	mi := &file_service_api_daemon_proto_msgTypes[23]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2023,7 +2023,7 @@ func (x *WatchMountEventsRequest) String() string {
 func (*WatchMountEventsRequest) ProtoMessage() {}
 
 func (x *WatchMountEventsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_service_api_api_proto_msgTypes[23]
+	mi := &file_service_api_daemon_proto_msgTypes[23]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2036,7 +2036,7 @@ func (x *WatchMountEventsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use WatchMountEventsRequest.ProtoReflect.Descriptor instead.
 func (*WatchMountEventsRequest) Descriptor() ([]byte, []int) {
-	return file_service_api_api_proto_rawDescGZIP(), []int{23}
+	return file_service_api_daemon_proto_rawDescGZIP(), []int{23}
 }
 
 func (x *WatchMountEventsRequest) GetMountIds() []string {
@@ -2057,7 +2057,7 @@ func (x *WatchMountEventsRequest) GetIncludeCurrent() bool {
 // snapshot emitted after an unmount record has been deleted.
 type MountEvent struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Type          MountEventType         `protobuf:"varint,1,opt,name=type,proto3,enum=api.MountEventType" json:"type,omitempty"`
+	Type          MountEventType         `protobuf:"varint,1,opt,name=type,proto3,enum=cyverse.irodsfs.daemon.v1.MountEventType" json:"type,omitempty"`
 	Mount         *MountInfo             `protobuf:"bytes,2,opt,name=mount,proto3" json:"mount,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -2065,7 +2065,7 @@ type MountEvent struct {
 
 func (x *MountEvent) Reset() {
 	*x = MountEvent{}
-	mi := &file_service_api_api_proto_msgTypes[24]
+	mi := &file_service_api_daemon_proto_msgTypes[24]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2077,7 +2077,7 @@ func (x *MountEvent) String() string {
 func (*MountEvent) ProtoMessage() {}
 
 func (x *MountEvent) ProtoReflect() protoreflect.Message {
-	mi := &file_service_api_api_proto_msgTypes[24]
+	mi := &file_service_api_daemon_proto_msgTypes[24]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2090,7 +2090,7 @@ func (x *MountEvent) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MountEvent.ProtoReflect.Descriptor instead.
 func (*MountEvent) Descriptor() ([]byte, []int) {
-	return file_service_api_api_proto_rawDescGZIP(), []int{24}
+	return file_service_api_daemon_proto_rawDescGZIP(), []int{24}
 }
 
 func (x *MountEvent) GetType() MountEventType {
@@ -2115,7 +2115,7 @@ type ReadyRequest struct {
 
 func (x *ReadyRequest) Reset() {
 	*x = ReadyRequest{}
-	mi := &file_service_api_api_proto_msgTypes[25]
+	mi := &file_service_api_daemon_proto_msgTypes[25]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2127,7 +2127,7 @@ func (x *ReadyRequest) String() string {
 func (*ReadyRequest) ProtoMessage() {}
 
 func (x *ReadyRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_service_api_api_proto_msgTypes[25]
+	mi := &file_service_api_daemon_proto_msgTypes[25]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2140,7 +2140,7 @@ func (x *ReadyRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ReadyRequest.ProtoReflect.Descriptor instead.
 func (*ReadyRequest) Descriptor() ([]byte, []int) {
-	return file_service_api_api_proto_rawDescGZIP(), []int{25}
+	return file_service_api_daemon_proto_rawDescGZIP(), []int{25}
 }
 
 type ReadyResponse struct {
@@ -2151,7 +2151,7 @@ type ReadyResponse struct {
 
 func (x *ReadyResponse) Reset() {
 	*x = ReadyResponse{}
-	mi := &file_service_api_api_proto_msgTypes[26]
+	mi := &file_service_api_daemon_proto_msgTypes[26]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2163,7 +2163,7 @@ func (x *ReadyResponse) String() string {
 func (*ReadyResponse) ProtoMessage() {}
 
 func (x *ReadyResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_service_api_api_proto_msgTypes[26]
+	mi := &file_service_api_daemon_proto_msgTypes[26]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2176,14 +2176,14 @@ func (x *ReadyResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ReadyResponse.ProtoReflect.Descriptor instead.
 func (*ReadyResponse) Descriptor() ([]byte, []int) {
-	return file_service_api_api_proto_rawDescGZIP(), []int{26}
+	return file_service_api_daemon_proto_rawDescGZIP(), []int{26}
 }
 
-var File_service_api_api_proto protoreflect.FileDescriptor
+var File_service_api_daemon_proto protoreflect.FileDescriptor
 
-const file_service_api_api_proto_rawDesc = "" +
+const file_service_api_daemon_proto_rawDesc = "" +
 	"\n" +
-	"\x15service/api/api.proto\x12\x03api\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x1egoogle/protobuf/duration.proto\"\xaf\x12\n" +
+	"\x18service/api/daemon.proto\x12\x19cyverse.irodsfs.daemon.v1\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x1egoogle/protobuf/duration.proto\"\xaf\x12\n" +
 	"\aAccount\x12C\n" +
 	"\x1birods_authentication_scheme\x18\x01 \x01(\tH\x00R\x19irodsAuthenticationScheme\x88\x01\x01\x12J\n" +
 	"\x1firods_client_server_negotiation\x18\x02 \x01(\bH\x01R\x1cirodsClientServerNegotiation\x88\x01\x01\x12@\n" +
@@ -2323,37 +2323,37 @@ const file_service_api_api_proto_rawDesc = "" +
 	"\x10_connect_timeoutB\x12\n" +
 	"\x10_command_timeoutB\x0e\n" +
 	"\f_default_ttlB\x1b\n" +
-	"\x19_enable_account_isolation\"\xf6\x01\n" +
+	"\x19_enable_account_isolation\"\xb8\x02\n" +
 	"\x12CacheBackendConfig\x12\x12\n" +
-	"\x04type\x18\x01 \x01(\tR\x04type\x125\n" +
-	"\x06memory\x18\x02 \x01(\v2\x18.api.MemoryBackendConfigH\x00R\x06memory\x88\x01\x01\x12>\n" +
-	"\tristretto\x18\x03 \x01(\v2\x1b.api.RistrettoBackendConfigH\x01R\tristretto\x88\x01\x01\x122\n" +
-	"\x05redis\x18\x04 \x01(\v2\x17.api.RedisBackendConfigH\x02R\x05redis\x88\x01\x01B\t\n" +
+	"\x04type\x18\x01 \x01(\tR\x04type\x12K\n" +
+	"\x06memory\x18\x02 \x01(\v2..cyverse.irodsfs.daemon.v1.MemoryBackendConfigH\x00R\x06memory\x88\x01\x01\x12T\n" +
+	"\tristretto\x18\x03 \x01(\v21.cyverse.irodsfs.daemon.v1.RistrettoBackendConfigH\x01R\tristretto\x88\x01\x01\x12H\n" +
+	"\x05redis\x18\x04 \x01(\v2-.cyverse.irodsfs.daemon.v1.RedisBackendConfigH\x02R\x05redis\x88\x01\x01B\t\n" +
 	"\a_memoryB\f\n" +
 	"\n" +
 	"_ristrettoB\b\n" +
-	"\x06_redis\"\x82\x02\n" +
-	"\vCacheConfig\x12\\\n" +
-	"\x19metadata_timeout_settings\x18\x01 \x03(\v2 .api.MetadataCacheTimeoutSettingR\x17metadataTimeoutSettings\x127\n" +
-	"\x15start_new_transaction\x18\x02 \x01(\bH\x00R\x13startNewTransaction\x88\x01\x01\x126\n" +
-	"\abackend\x18\x03 \x01(\v2\x17.api.CacheBackendConfigH\x01R\abackend\x88\x01\x01B\x18\n" +
+	"\x06_redis\"\xae\x02\n" +
+	"\vCacheConfig\x12r\n" +
+	"\x19metadata_timeout_settings\x18\x01 \x03(\v26.cyverse.irodsfs.daemon.v1.MetadataCacheTimeoutSettingR\x17metadataTimeoutSettings\x127\n" +
+	"\x15start_new_transaction\x18\x02 \x01(\bH\x00R\x13startNewTransaction\x88\x01\x01\x12L\n" +
+	"\abackend\x18\x03 \x01(\v2-.cyverse.irodsfs.daemon.v1.CacheBackendConfigH\x01R\abackend\x88\x01\x01B\x18\n" +
 	"\x16_start_new_transactionB\n" +
 	"\n" +
-	"\b_backend\"\xf9\x05\n" +
-	"\rIRODSFSConfig\x12&\n" +
-	"\aaccount\x18\x01 \x01(\v2\f.api.AccountR\aaccount\x125\n" +
-	"\rpath_mappings\x18\x02 \x03(\v2\x10.api.PathMappingR\fpathMappings\x12)\n" +
+	"\b_backend\"\xe7\x06\n" +
+	"\rIRODSFSConfig\x12<\n" +
+	"\aaccount\x18\x01 \x01(\v2\".cyverse.irodsfs.daemon.v1.AccountR\aaccount\x12K\n" +
+	"\rpath_mappings\x18\x02 \x03(\v2&.cyverse.irodsfs.daemon.v1.PathMappingR\fpathMappings\x12)\n" +
 	"\x0eread_ahead_max\x18\x03 \x01(\x05H\x00R\freadAheadMax\x88\x01\x01\x12)\n" +
 	"\x0eread_write_max\x18\x04 \x01(\x05H\x01R\freadWriteMax\x88\x01\x01\x12!\n" +
 	"\ffuse_options\x18\x05 \x03(\tR\vfuseOptions\x12\x15\n" +
 	"\x03uid\x18\x06 \x01(\x05H\x02R\x03uid\x88\x01\x01\x12\x15\n" +
 	"\x03gid\x18\a \x01(\x05H\x03R\x03gid\x88\x01\x01\x12$\n" +
 	"\vsystem_user\x18\b \x01(\tH\x04R\n" +
-	"systemUser\x88\x01\x01\x12K\n" +
-	"\x13metadata_connection\x18\t \x01(\v2\x15.api.ConnectionConfigH\x05R\x12metadataConnection\x88\x01\x01\x12?\n" +
+	"systemUser\x88\x01\x01\x12a\n" +
+	"\x13metadata_connection\x18\t \x01(\v2+.cyverse.irodsfs.daemon.v1.ConnectionConfigH\x05R\x12metadataConnection\x88\x01\x01\x12U\n" +
 	"\rio_connection\x18\n" +
-	" \x01(\v2\x15.api.ConnectionConfigH\x06R\fioConnection\x88\x01\x01\x12+\n" +
-	"\x05cache\x18\v \x01(\v2\x10.api.CacheConfigH\aR\x05cache\x88\x01\x01\x12(\n" +
+	" \x01(\v2+.cyverse.irodsfs.daemon.v1.ConnectionConfigH\x06R\fioConnection\x88\x01\x01\x12A\n" +
+	"\x05cache\x18\v \x01(\v2&.cyverse.irodsfs.daemon.v1.CacheConfigH\aR\x05cache\x88\x01\x01\x12(\n" +
 	"\rpool_endpoint\x18\f \x01(\tH\bR\fpoolEndpoint\x88\x01\x01\x12\x14\n" +
 	"\x05debug\x18\r \x01(\bR\x05debug\x12%\n" +
 	"\vdescription\x18\x0e \x01(\tH\tR\vdescription\x88\x01\x01B\x11\n" +
@@ -2366,12 +2366,12 @@ const file_service_api_api_proto_rawDesc = "" +
 	"\x0e_io_connectionB\b\n" +
 	"\x06_cacheB\x10\n" +
 	"\x0e_pool_endpointB\x0e\n" +
-	"\f_description\"\xec\x01\n" +
+	"\f_description\"\x82\x02\n" +
 	"\vDAVFSConfig\x12\x10\n" +
 	"\x03url\x18\x01 \x01(\tR\x03url\x12\x1f\n" +
 	"\busername\x18\x02 \x01(\tH\x00R\busername\x88\x01\x01\x12\x1f\n" +
-	"\bpassword\x18\x03 \x01(\tH\x01R\bpassword\x88\x01\x01\x124\n" +
-	"\x06config\x18\x04 \x03(\v2\x1c.api.DAVFSConfig.ConfigEntryR\x06config\x1a9\n" +
+	"\bpassword\x18\x03 \x01(\tH\x01R\bpassword\x88\x01\x01\x12J\n" +
+	"\x06config\x18\x04 \x03(\v22.cyverse.irodsfs.daemon.v1.DAVFSConfig.ConfigEntryR\x06config\x1a9\n" +
 	"\vConfigEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01B\v\n" +
@@ -2380,32 +2380,32 @@ const file_service_api_api_proto_rawDesc = "" +
 	"\tNFSConfig\x12\x12\n" +
 	"\x04host\x18\x01 \x01(\tR\x04host\x12\x12\n" +
 	"\x04port\x18\x02 \x01(\x05R\x04port\x12\x12\n" +
-	"\x04path\x18\x03 \x01(\tR\x04path\"\xfd\x01\n" +
+	"\x04path\x18\x03 \x01(\tR\x04path\"\xbf\x02\n" +
 	"\vMountConfig\x12\x1d\n" +
 	"\n" +
 	"mount_path\x18\x01 \x01(\tR\tmountPath\x12\x1b\n" +
 	"\tread_only\x18\x02 \x01(\bR\breadOnly\x12#\n" +
-	"\rmount_options\x18\x03 \x03(\tR\fmountOptions\x12.\n" +
+	"\rmount_options\x18\x03 \x03(\tR\fmountOptions\x12D\n" +
 	"\airodsfs\x18\n" +
-	" \x01(\v2\x12.api.IRODSFSConfigH\x00R\airodsfs\x12(\n" +
-	"\x05davfs\x18\v \x01(\v2\x10.api.DAVFSConfigH\x00R\x05davfs\x12\"\n" +
-	"\x03nfs\x18\f \x01(\v2\x0e.api.NFSConfigH\x00R\x03nfsB\x0f\n" +
-	"\rclient_config\"\xc8\x01\n" +
+	" \x01(\v2(.cyverse.irodsfs.daemon.v1.IRODSFSConfigH\x00R\airodsfs\x12>\n" +
+	"\x05davfs\x18\v \x01(\v2&.cyverse.irodsfs.daemon.v1.DAVFSConfigH\x00R\x05davfs\x128\n" +
+	"\x03nfs\x18\f \x01(\v2$.cyverse.irodsfs.daemon.v1.NFSConfigH\x00R\x03nfsB\x0f\n" +
+	"\rclient_config\"\xde\x01\n" +
 	"\bAPIError\x12\x12\n" +
 	"\x04code\x18\x01 \x01(\tR\x04code\x12\x18\n" +
 	"\amessage\x18\x02 \x01(\tR\amessage\x12\x1c\n" +
-	"\tretryable\x18\x03 \x01(\bR\tretryable\x124\n" +
-	"\adetails\x18\x04 \x03(\v2\x1a.api.APIError.DetailsEntryR\adetails\x1a:\n" +
+	"\tretryable\x18\x03 \x01(\bR\tretryable\x12J\n" +
+	"\adetails\x18\x04 \x03(\v20.cyverse.irodsfs.daemon.v1.APIError.DetailsEntryR\adetails\x1a:\n" +
 	"\fDetailsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
-	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"\x81\x04\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"\xc3\x04\n" +
 	"\tMountInfo\x12\x19\n" +
-	"\bmount_id\x18\x01 \x01(\tR\amountId\x12%\n" +
-	"\x05state\x18\x02 \x01(\x0e2\x0f.api.MountStateR\x05state\x12(\n" +
-	"\x06config\x18\x03 \x01(\v2\x10.api.MountConfigR\x06config\x12\x18\n" +
-	"\aattempt\x18\x04 \x01(\x05R\aattempt\x12,\n" +
+	"\bmount_id\x18\x01 \x01(\tR\amountId\x12;\n" +
+	"\x05state\x18\x02 \x01(\x0e2%.cyverse.irodsfs.daemon.v1.MountStateR\x05state\x12>\n" +
+	"\x06config\x18\x03 \x01(\v2&.cyverse.irodsfs.daemon.v1.MountConfigR\x06config\x12\x18\n" +
+	"\aattempt\x18\x04 \x01(\x05R\aattempt\x12B\n" +
 	"\n" +
-	"last_error\x18\x05 \x01(\v2\r.api.APIErrorR\tlastError\x12\x10\n" +
+	"last_error\x18\x05 \x01(\v2#.cyverse.irodsfs.daemon.v1.APIErrorR\tlastError\x12\x10\n" +
 	"\x03pid\x18\x06 \x01(\x03R\x03pid\x129\n" +
 	"\n" +
 	"created_at\x18\a \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\x129\n" +
@@ -2415,37 +2415,37 @@ const file_service_api_api_proto_rawDesc = "" +
 	"mounted_at\x18\t \x01(\v2\x1a.google.protobuf.TimestampR\tmountedAt\x12=\n" +
 	"\funmounted_at\x18\n" +
 	" \x01(\v2\x1a.google.protobuf.TimestampR\vunmountedAt\x12>\n" +
-	"\rnext_retry_at\x18\v \x01(\v2\x1a.google.protobuf.TimestampR\vnextRetryAt\"e\n" +
+	"\rnext_retry_at\x18\v \x01(\v2\x1a.google.protobuf.TimestampR\vnextRetryAt\"{\n" +
 	"\fMountRequest\x12\x1e\n" +
-	"\bmount_id\x18\x01 \x01(\tH\x00R\amountId\x88\x01\x01\x12(\n" +
-	"\x06config\x18\x02 \x01(\v2\x10.api.MountConfigR\x06configB\v\n" +
-	"\t_mount_id\"5\n" +
-	"\rMountResponse\x12$\n" +
-	"\x05mount\x18\x01 \x01(\v2\x0e.api.MountInfoR\x05mount\"+\n" +
+	"\bmount_id\x18\x01 \x01(\tH\x00R\amountId\x88\x01\x01\x12>\n" +
+	"\x06config\x18\x02 \x01(\v2&.cyverse.irodsfs.daemon.v1.MountConfigR\x06configB\v\n" +
+	"\t_mount_id\"K\n" +
+	"\rMountResponse\x12:\n" +
+	"\x05mount\x18\x01 \x01(\v2$.cyverse.irodsfs.daemon.v1.MountInfoR\x05mount\"+\n" +
 	"\x0eUnmountRequest\x12\x19\n" +
-	"\bmount_id\x18\x01 \x01(\tR\amountId\"7\n" +
-	"\x0fUnmountResponse\x12$\n" +
-	"\x05mount\x18\x01 \x01(\v2\x0e.api.MountInfoR\x05mount\"\xb9\x01\n" +
-	"\x11ListMountsRequest\x12'\n" +
-	"\x06states\x18\x01 \x03(\x0e2\x0f.api.MountStateR\x06states\x12/\n" +
+	"\bmount_id\x18\x01 \x01(\tR\amountId\"M\n" +
+	"\x0fUnmountResponse\x12:\n" +
+	"\x05mount\x18\x01 \x01(\v2$.cyverse.irodsfs.daemon.v1.MountInfoR\x05mount\"\xcf\x01\n" +
+	"\x11ListMountsRequest\x12=\n" +
+	"\x06states\x18\x01 \x03(\x0e2%.cyverse.irodsfs.daemon.v1.MountStateR\x06states\x12/\n" +
 	"\x11mount_path_prefix\x18\x02 \x01(\tH\x00R\x0fmountPathPrefix\x88\x01\x01\x12$\n" +
 	"\vclient_user\x18\x03 \x01(\tH\x01R\n" +
 	"clientUser\x88\x01\x01B\x14\n" +
 	"\x12_mount_path_prefixB\x0e\n" +
-	"\f_client_user\"<\n" +
-	"\x12ListMountsResponse\x12&\n" +
-	"\x06mounts\x18\x01 \x03(\v2\x0e.api.MountInfoR\x06mounts\",\n" +
+	"\f_client_user\"R\n" +
+	"\x12ListMountsResponse\x12<\n" +
+	"\x06mounts\x18\x01 \x03(\v2$.cyverse.irodsfs.daemon.v1.MountInfoR\x06mounts\",\n" +
 	"\x0fGetMountRequest\x12\x19\n" +
-	"\bmount_id\x18\x01 \x01(\tR\amountId\"8\n" +
-	"\x10GetMountResponse\x12$\n" +
-	"\x05mount\x18\x01 \x01(\v2\x0e.api.MountInfoR\x05mount\"_\n" +
+	"\bmount_id\x18\x01 \x01(\tR\amountId\"N\n" +
+	"\x10GetMountResponse\x12:\n" +
+	"\x05mount\x18\x01 \x01(\v2$.cyverse.irodsfs.daemon.v1.MountInfoR\x05mount\"_\n" +
 	"\x17WatchMountEventsRequest\x12\x1b\n" +
 	"\tmount_ids\x18\x01 \x03(\tR\bmountIds\x12'\n" +
-	"\x0finclude_current\x18\x02 \x01(\bR\x0eincludeCurrent\"[\n" +
+	"\x0finclude_current\x18\x02 \x01(\bR\x0eincludeCurrent\"\x87\x01\n" +
 	"\n" +
-	"MountEvent\x12'\n" +
-	"\x04type\x18\x01 \x01(\x0e2\x13.api.MountEventTypeR\x04type\x12$\n" +
-	"\x05mount\x18\x02 \x01(\v2\x0e.api.MountInfoR\x05mount\"\x0e\n" +
+	"MountEvent\x12=\n" +
+	"\x04type\x18\x01 \x01(\x0e2).cyverse.irodsfs.daemon.v1.MountEventTypeR\x04type\x12:\n" +
+	"\x05mount\x18\x02 \x01(\v2$.cyverse.irodsfs.daemon.v1.MountInfoR\x05mount\"\x0e\n" +
 	"\fReadyRequest\"\x0f\n" +
 	"\rReadyResponse*\xec\x01\n" +
 	"\n" +
@@ -2462,121 +2462,121 @@ const file_service_api_api_proto_rawDesc = "" +
 	"\x1cMOUNT_EVENT_TYPE_UNSPECIFIED\x10\x00\x12\x1d\n" +
 	"\x19MOUNT_EVENT_TYPE_SNAPSHOT\x10\x01\x12\x1c\n" +
 	"\x18MOUNT_EVENT_TYPE_UPDATED\x10\x02\x12\x1c\n" +
-	"\x18MOUNT_EVENT_TYPE_REMOVED\x10\x032\xed\x02\n" +
-	"\fMountService\x120\n" +
-	"\x05Mount\x12\x11.api.MountRequest\x1a\x12.api.MountResponse\"\x00\x126\n" +
-	"\aUnmount\x12\x13.api.UnmountRequest\x1a\x14.api.UnmountResponse\"\x00\x12?\n" +
+	"\x18MOUNT_EVENT_TYPE_REMOVED\x10\x032\xf5\x04\n" +
+	"\fMountService\x12\\\n" +
+	"\x05Mount\x12'.cyverse.irodsfs.daemon.v1.MountRequest\x1a(.cyverse.irodsfs.daemon.v1.MountResponse\"\x00\x12b\n" +
+	"\aUnmount\x12).cyverse.irodsfs.daemon.v1.UnmountRequest\x1a*.cyverse.irodsfs.daemon.v1.UnmountResponse\"\x00\x12k\n" +
 	"\n" +
-	"ListMounts\x12\x16.api.ListMountsRequest\x1a\x17.api.ListMountsResponse\"\x00\x129\n" +
-	"\bGetMount\x12\x14.api.GetMountRequest\x1a\x15.api.GetMountResponse\"\x00\x12E\n" +
-	"\x10WatchMountEvents\x12\x1c.api.WatchMountEventsRequest\x1a\x0f.api.MountEvent\"\x000\x01\x120\n" +
-	"\x05Ready\x12\x11.api.ReadyRequest\x1a\x12.api.ReadyResponse\"\x00B-Z+github.com/cyverse/irodsfsd/service/api;apib\x06proto3"
+	"ListMounts\x12,.cyverse.irodsfs.daemon.v1.ListMountsRequest\x1a-.cyverse.irodsfs.daemon.v1.ListMountsResponse\"\x00\x12e\n" +
+	"\bGetMount\x12*.cyverse.irodsfs.daemon.v1.GetMountRequest\x1a+.cyverse.irodsfs.daemon.v1.GetMountResponse\"\x00\x12q\n" +
+	"\x10WatchMountEvents\x122.cyverse.irodsfs.daemon.v1.WatchMountEventsRequest\x1a%.cyverse.irodsfs.daemon.v1.MountEvent\"\x000\x01\x12\\\n" +
+	"\x05Ready\x12'.cyverse.irodsfs.daemon.v1.ReadyRequest\x1a(.cyverse.irodsfs.daemon.v1.ReadyResponse\"\x00B-Z+github.com/cyverse/irodsfsd/service/api;apib\x06proto3"
 
 var (
-	file_service_api_api_proto_rawDescOnce sync.Once
-	file_service_api_api_proto_rawDescData []byte
+	file_service_api_daemon_proto_rawDescOnce sync.Once
+	file_service_api_daemon_proto_rawDescData []byte
 )
 
-func file_service_api_api_proto_rawDescGZIP() []byte {
-	file_service_api_api_proto_rawDescOnce.Do(func() {
-		file_service_api_api_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_service_api_api_proto_rawDesc), len(file_service_api_api_proto_rawDesc)))
+func file_service_api_daemon_proto_rawDescGZIP() []byte {
+	file_service_api_daemon_proto_rawDescOnce.Do(func() {
+		file_service_api_daemon_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_service_api_daemon_proto_rawDesc), len(file_service_api_daemon_proto_rawDesc)))
 	})
-	return file_service_api_api_proto_rawDescData
+	return file_service_api_daemon_proto_rawDescData
 }
 
-var file_service_api_api_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
-var file_service_api_api_proto_msgTypes = make([]protoimpl.MessageInfo, 29)
-var file_service_api_api_proto_goTypes = []any{
-	(MountState)(0),                     // 0: api.MountState
-	(MountEventType)(0),                 // 1: api.MountEventType
-	(*Account)(nil),                     // 2: api.Account
-	(*PathMapping)(nil),                 // 3: api.PathMapping
-	(*ConnectionConfig)(nil),            // 4: api.ConnectionConfig
-	(*MetadataCacheTimeoutSetting)(nil), // 5: api.MetadataCacheTimeoutSetting
-	(*MemoryBackendConfig)(nil),         // 6: api.MemoryBackendConfig
-	(*RistrettoBackendConfig)(nil),      // 7: api.RistrettoBackendConfig
-	(*RedisBackendConfig)(nil),          // 8: api.RedisBackendConfig
-	(*CacheBackendConfig)(nil),          // 9: api.CacheBackendConfig
-	(*CacheConfig)(nil),                 // 10: api.CacheConfig
-	(*IRODSFSConfig)(nil),               // 11: api.IRODSFSConfig
-	(*DAVFSConfig)(nil),                 // 12: api.DAVFSConfig
-	(*NFSConfig)(nil),                   // 13: api.NFSConfig
-	(*MountConfig)(nil),                 // 14: api.MountConfig
-	(*APIError)(nil),                    // 15: api.APIError
-	(*MountInfo)(nil),                   // 16: api.MountInfo
-	(*MountRequest)(nil),                // 17: api.MountRequest
-	(*MountResponse)(nil),               // 18: api.MountResponse
-	(*UnmountRequest)(nil),              // 19: api.UnmountRequest
-	(*UnmountResponse)(nil),             // 20: api.UnmountResponse
-	(*ListMountsRequest)(nil),           // 21: api.ListMountsRequest
-	(*ListMountsResponse)(nil),          // 22: api.ListMountsResponse
-	(*GetMountRequest)(nil),             // 23: api.GetMountRequest
-	(*GetMountResponse)(nil),            // 24: api.GetMountResponse
-	(*WatchMountEventsRequest)(nil),     // 25: api.WatchMountEventsRequest
-	(*MountEvent)(nil),                  // 26: api.MountEvent
-	(*ReadyRequest)(nil),                // 27: api.ReadyRequest
-	(*ReadyResponse)(nil),               // 28: api.ReadyResponse
-	nil,                                 // 29: api.DAVFSConfig.ConfigEntry
-	nil,                                 // 30: api.APIError.DetailsEntry
+var file_service_api_daemon_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
+var file_service_api_daemon_proto_msgTypes = make([]protoimpl.MessageInfo, 29)
+var file_service_api_daemon_proto_goTypes = []any{
+	(MountState)(0),                     // 0: cyverse.irodsfs.daemon.v1.MountState
+	(MountEventType)(0),                 // 1: cyverse.irodsfs.daemon.v1.MountEventType
+	(*Account)(nil),                     // 2: cyverse.irodsfs.daemon.v1.Account
+	(*PathMapping)(nil),                 // 3: cyverse.irodsfs.daemon.v1.PathMapping
+	(*ConnectionConfig)(nil),            // 4: cyverse.irodsfs.daemon.v1.ConnectionConfig
+	(*MetadataCacheTimeoutSetting)(nil), // 5: cyverse.irodsfs.daemon.v1.MetadataCacheTimeoutSetting
+	(*MemoryBackendConfig)(nil),         // 6: cyverse.irodsfs.daemon.v1.MemoryBackendConfig
+	(*RistrettoBackendConfig)(nil),      // 7: cyverse.irodsfs.daemon.v1.RistrettoBackendConfig
+	(*RedisBackendConfig)(nil),          // 8: cyverse.irodsfs.daemon.v1.RedisBackendConfig
+	(*CacheBackendConfig)(nil),          // 9: cyverse.irodsfs.daemon.v1.CacheBackendConfig
+	(*CacheConfig)(nil),                 // 10: cyverse.irodsfs.daemon.v1.CacheConfig
+	(*IRODSFSConfig)(nil),               // 11: cyverse.irodsfs.daemon.v1.IRODSFSConfig
+	(*DAVFSConfig)(nil),                 // 12: cyverse.irodsfs.daemon.v1.DAVFSConfig
+	(*NFSConfig)(nil),                   // 13: cyverse.irodsfs.daemon.v1.NFSConfig
+	(*MountConfig)(nil),                 // 14: cyverse.irodsfs.daemon.v1.MountConfig
+	(*APIError)(nil),                    // 15: cyverse.irodsfs.daemon.v1.APIError
+	(*MountInfo)(nil),                   // 16: cyverse.irodsfs.daemon.v1.MountInfo
+	(*MountRequest)(nil),                // 17: cyverse.irodsfs.daemon.v1.MountRequest
+	(*MountResponse)(nil),               // 18: cyverse.irodsfs.daemon.v1.MountResponse
+	(*UnmountRequest)(nil),              // 19: cyverse.irodsfs.daemon.v1.UnmountRequest
+	(*UnmountResponse)(nil),             // 20: cyverse.irodsfs.daemon.v1.UnmountResponse
+	(*ListMountsRequest)(nil),           // 21: cyverse.irodsfs.daemon.v1.ListMountsRequest
+	(*ListMountsResponse)(nil),          // 22: cyverse.irodsfs.daemon.v1.ListMountsResponse
+	(*GetMountRequest)(nil),             // 23: cyverse.irodsfs.daemon.v1.GetMountRequest
+	(*GetMountResponse)(nil),            // 24: cyverse.irodsfs.daemon.v1.GetMountResponse
+	(*WatchMountEventsRequest)(nil),     // 25: cyverse.irodsfs.daemon.v1.WatchMountEventsRequest
+	(*MountEvent)(nil),                  // 26: cyverse.irodsfs.daemon.v1.MountEvent
+	(*ReadyRequest)(nil),                // 27: cyverse.irodsfs.daemon.v1.ReadyRequest
+	(*ReadyResponse)(nil),               // 28: cyverse.irodsfs.daemon.v1.ReadyResponse
+	nil,                                 // 29: cyverse.irodsfs.daemon.v1.DAVFSConfig.ConfigEntry
+	nil,                                 // 30: cyverse.irodsfs.daemon.v1.APIError.DetailsEntry
 	(*durationpb.Duration)(nil),         // 31: google.protobuf.Duration
 	(*timestamppb.Timestamp)(nil),       // 32: google.protobuf.Timestamp
 }
-var file_service_api_api_proto_depIdxs = []int32{
-	31, // 0: api.ConnectionConfig.creation_timeout:type_name -> google.protobuf.Duration
-	31, // 1: api.ConnectionConfig.lifespan:type_name -> google.protobuf.Duration
-	31, // 2: api.ConnectionConfig.idle_timeout:type_name -> google.protobuf.Duration
-	31, // 3: api.ConnectionConfig.operation_timeout:type_name -> google.protobuf.Duration
-	31, // 4: api.ConnectionConfig.long_operation_timeout:type_name -> google.protobuf.Duration
-	31, // 5: api.MetadataCacheTimeoutSetting.timeout:type_name -> google.protobuf.Duration
-	31, // 6: api.MemoryBackendConfig.cleanup_interval:type_name -> google.protobuf.Duration
-	31, // 7: api.MemoryBackendConfig.default_ttl:type_name -> google.protobuf.Duration
-	31, // 8: api.RistrettoBackendConfig.default_ttl:type_name -> google.protobuf.Duration
-	31, // 9: api.RedisBackendConfig.connect_timeout:type_name -> google.protobuf.Duration
-	31, // 10: api.RedisBackendConfig.command_timeout:type_name -> google.protobuf.Duration
-	31, // 11: api.RedisBackendConfig.default_ttl:type_name -> google.protobuf.Duration
-	6,  // 12: api.CacheBackendConfig.memory:type_name -> api.MemoryBackendConfig
-	7,  // 13: api.CacheBackendConfig.ristretto:type_name -> api.RistrettoBackendConfig
-	8,  // 14: api.CacheBackendConfig.redis:type_name -> api.RedisBackendConfig
-	5,  // 15: api.CacheConfig.metadata_timeout_settings:type_name -> api.MetadataCacheTimeoutSetting
-	9,  // 16: api.CacheConfig.backend:type_name -> api.CacheBackendConfig
-	2,  // 17: api.IRODSFSConfig.account:type_name -> api.Account
-	3,  // 18: api.IRODSFSConfig.path_mappings:type_name -> api.PathMapping
-	4,  // 19: api.IRODSFSConfig.metadata_connection:type_name -> api.ConnectionConfig
-	4,  // 20: api.IRODSFSConfig.io_connection:type_name -> api.ConnectionConfig
-	10, // 21: api.IRODSFSConfig.cache:type_name -> api.CacheConfig
-	29, // 22: api.DAVFSConfig.config:type_name -> api.DAVFSConfig.ConfigEntry
-	11, // 23: api.MountConfig.irodsfs:type_name -> api.IRODSFSConfig
-	12, // 24: api.MountConfig.davfs:type_name -> api.DAVFSConfig
-	13, // 25: api.MountConfig.nfs:type_name -> api.NFSConfig
-	30, // 26: api.APIError.details:type_name -> api.APIError.DetailsEntry
-	0,  // 27: api.MountInfo.state:type_name -> api.MountState
-	14, // 28: api.MountInfo.config:type_name -> api.MountConfig
-	15, // 29: api.MountInfo.last_error:type_name -> api.APIError
-	32, // 30: api.MountInfo.created_at:type_name -> google.protobuf.Timestamp
-	32, // 31: api.MountInfo.updated_at:type_name -> google.protobuf.Timestamp
-	32, // 32: api.MountInfo.mounted_at:type_name -> google.protobuf.Timestamp
-	32, // 33: api.MountInfo.unmounted_at:type_name -> google.protobuf.Timestamp
-	32, // 34: api.MountInfo.next_retry_at:type_name -> google.protobuf.Timestamp
-	14, // 35: api.MountRequest.config:type_name -> api.MountConfig
-	16, // 36: api.MountResponse.mount:type_name -> api.MountInfo
-	16, // 37: api.UnmountResponse.mount:type_name -> api.MountInfo
-	0,  // 38: api.ListMountsRequest.states:type_name -> api.MountState
-	16, // 39: api.ListMountsResponse.mounts:type_name -> api.MountInfo
-	16, // 40: api.GetMountResponse.mount:type_name -> api.MountInfo
-	1,  // 41: api.MountEvent.type:type_name -> api.MountEventType
-	16, // 42: api.MountEvent.mount:type_name -> api.MountInfo
-	17, // 43: api.MountService.Mount:input_type -> api.MountRequest
-	19, // 44: api.MountService.Unmount:input_type -> api.UnmountRequest
-	21, // 45: api.MountService.ListMounts:input_type -> api.ListMountsRequest
-	23, // 46: api.MountService.GetMount:input_type -> api.GetMountRequest
-	25, // 47: api.MountService.WatchMountEvents:input_type -> api.WatchMountEventsRequest
-	27, // 48: api.MountService.Ready:input_type -> api.ReadyRequest
-	18, // 49: api.MountService.Mount:output_type -> api.MountResponse
-	20, // 50: api.MountService.Unmount:output_type -> api.UnmountResponse
-	22, // 51: api.MountService.ListMounts:output_type -> api.ListMountsResponse
-	24, // 52: api.MountService.GetMount:output_type -> api.GetMountResponse
-	26, // 53: api.MountService.WatchMountEvents:output_type -> api.MountEvent
-	28, // 54: api.MountService.Ready:output_type -> api.ReadyResponse
+var file_service_api_daemon_proto_depIdxs = []int32{
+	31, // 0: cyverse.irodsfs.daemon.v1.ConnectionConfig.creation_timeout:type_name -> google.protobuf.Duration
+	31, // 1: cyverse.irodsfs.daemon.v1.ConnectionConfig.lifespan:type_name -> google.protobuf.Duration
+	31, // 2: cyverse.irodsfs.daemon.v1.ConnectionConfig.idle_timeout:type_name -> google.protobuf.Duration
+	31, // 3: cyverse.irodsfs.daemon.v1.ConnectionConfig.operation_timeout:type_name -> google.protobuf.Duration
+	31, // 4: cyverse.irodsfs.daemon.v1.ConnectionConfig.long_operation_timeout:type_name -> google.protobuf.Duration
+	31, // 5: cyverse.irodsfs.daemon.v1.MetadataCacheTimeoutSetting.timeout:type_name -> google.protobuf.Duration
+	31, // 6: cyverse.irodsfs.daemon.v1.MemoryBackendConfig.cleanup_interval:type_name -> google.protobuf.Duration
+	31, // 7: cyverse.irodsfs.daemon.v1.MemoryBackendConfig.default_ttl:type_name -> google.protobuf.Duration
+	31, // 8: cyverse.irodsfs.daemon.v1.RistrettoBackendConfig.default_ttl:type_name -> google.protobuf.Duration
+	31, // 9: cyverse.irodsfs.daemon.v1.RedisBackendConfig.connect_timeout:type_name -> google.protobuf.Duration
+	31, // 10: cyverse.irodsfs.daemon.v1.RedisBackendConfig.command_timeout:type_name -> google.protobuf.Duration
+	31, // 11: cyverse.irodsfs.daemon.v1.RedisBackendConfig.default_ttl:type_name -> google.protobuf.Duration
+	6,  // 12: cyverse.irodsfs.daemon.v1.CacheBackendConfig.memory:type_name -> cyverse.irodsfs.daemon.v1.MemoryBackendConfig
+	7,  // 13: cyverse.irodsfs.daemon.v1.CacheBackendConfig.ristretto:type_name -> cyverse.irodsfs.daemon.v1.RistrettoBackendConfig
+	8,  // 14: cyverse.irodsfs.daemon.v1.CacheBackendConfig.redis:type_name -> cyverse.irodsfs.daemon.v1.RedisBackendConfig
+	5,  // 15: cyverse.irodsfs.daemon.v1.CacheConfig.metadata_timeout_settings:type_name -> cyverse.irodsfs.daemon.v1.MetadataCacheTimeoutSetting
+	9,  // 16: cyverse.irodsfs.daemon.v1.CacheConfig.backend:type_name -> cyverse.irodsfs.daemon.v1.CacheBackendConfig
+	2,  // 17: cyverse.irodsfs.daemon.v1.IRODSFSConfig.account:type_name -> cyverse.irodsfs.daemon.v1.Account
+	3,  // 18: cyverse.irodsfs.daemon.v1.IRODSFSConfig.path_mappings:type_name -> cyverse.irodsfs.daemon.v1.PathMapping
+	4,  // 19: cyverse.irodsfs.daemon.v1.IRODSFSConfig.metadata_connection:type_name -> cyverse.irodsfs.daemon.v1.ConnectionConfig
+	4,  // 20: cyverse.irodsfs.daemon.v1.IRODSFSConfig.io_connection:type_name -> cyverse.irodsfs.daemon.v1.ConnectionConfig
+	10, // 21: cyverse.irodsfs.daemon.v1.IRODSFSConfig.cache:type_name -> cyverse.irodsfs.daemon.v1.CacheConfig
+	29, // 22: cyverse.irodsfs.daemon.v1.DAVFSConfig.config:type_name -> cyverse.irodsfs.daemon.v1.DAVFSConfig.ConfigEntry
+	11, // 23: cyverse.irodsfs.daemon.v1.MountConfig.irodsfs:type_name -> cyverse.irodsfs.daemon.v1.IRODSFSConfig
+	12, // 24: cyverse.irodsfs.daemon.v1.MountConfig.davfs:type_name -> cyverse.irodsfs.daemon.v1.DAVFSConfig
+	13, // 25: cyverse.irodsfs.daemon.v1.MountConfig.nfs:type_name -> cyverse.irodsfs.daemon.v1.NFSConfig
+	30, // 26: cyverse.irodsfs.daemon.v1.APIError.details:type_name -> cyverse.irodsfs.daemon.v1.APIError.DetailsEntry
+	0,  // 27: cyverse.irodsfs.daemon.v1.MountInfo.state:type_name -> cyverse.irodsfs.daemon.v1.MountState
+	14, // 28: cyverse.irodsfs.daemon.v1.MountInfo.config:type_name -> cyverse.irodsfs.daemon.v1.MountConfig
+	15, // 29: cyverse.irodsfs.daemon.v1.MountInfo.last_error:type_name -> cyverse.irodsfs.daemon.v1.APIError
+	32, // 30: cyverse.irodsfs.daemon.v1.MountInfo.created_at:type_name -> google.protobuf.Timestamp
+	32, // 31: cyverse.irodsfs.daemon.v1.MountInfo.updated_at:type_name -> google.protobuf.Timestamp
+	32, // 32: cyverse.irodsfs.daemon.v1.MountInfo.mounted_at:type_name -> google.protobuf.Timestamp
+	32, // 33: cyverse.irodsfs.daemon.v1.MountInfo.unmounted_at:type_name -> google.protobuf.Timestamp
+	32, // 34: cyverse.irodsfs.daemon.v1.MountInfo.next_retry_at:type_name -> google.protobuf.Timestamp
+	14, // 35: cyverse.irodsfs.daemon.v1.MountRequest.config:type_name -> cyverse.irodsfs.daemon.v1.MountConfig
+	16, // 36: cyverse.irodsfs.daemon.v1.MountResponse.mount:type_name -> cyverse.irodsfs.daemon.v1.MountInfo
+	16, // 37: cyverse.irodsfs.daemon.v1.UnmountResponse.mount:type_name -> cyverse.irodsfs.daemon.v1.MountInfo
+	0,  // 38: cyverse.irodsfs.daemon.v1.ListMountsRequest.states:type_name -> cyverse.irodsfs.daemon.v1.MountState
+	16, // 39: cyverse.irodsfs.daemon.v1.ListMountsResponse.mounts:type_name -> cyverse.irodsfs.daemon.v1.MountInfo
+	16, // 40: cyverse.irodsfs.daemon.v1.GetMountResponse.mount:type_name -> cyverse.irodsfs.daemon.v1.MountInfo
+	1,  // 41: cyverse.irodsfs.daemon.v1.MountEvent.type:type_name -> cyverse.irodsfs.daemon.v1.MountEventType
+	16, // 42: cyverse.irodsfs.daemon.v1.MountEvent.mount:type_name -> cyverse.irodsfs.daemon.v1.MountInfo
+	17, // 43: cyverse.irodsfs.daemon.v1.MountService.Mount:input_type -> cyverse.irodsfs.daemon.v1.MountRequest
+	19, // 44: cyverse.irodsfs.daemon.v1.MountService.Unmount:input_type -> cyverse.irodsfs.daemon.v1.UnmountRequest
+	21, // 45: cyverse.irodsfs.daemon.v1.MountService.ListMounts:input_type -> cyverse.irodsfs.daemon.v1.ListMountsRequest
+	23, // 46: cyverse.irodsfs.daemon.v1.MountService.GetMount:input_type -> cyverse.irodsfs.daemon.v1.GetMountRequest
+	25, // 47: cyverse.irodsfs.daemon.v1.MountService.WatchMountEvents:input_type -> cyverse.irodsfs.daemon.v1.WatchMountEventsRequest
+	27, // 48: cyverse.irodsfs.daemon.v1.MountService.Ready:input_type -> cyverse.irodsfs.daemon.v1.ReadyRequest
+	18, // 49: cyverse.irodsfs.daemon.v1.MountService.Mount:output_type -> cyverse.irodsfs.daemon.v1.MountResponse
+	20, // 50: cyverse.irodsfs.daemon.v1.MountService.Unmount:output_type -> cyverse.irodsfs.daemon.v1.UnmountResponse
+	22, // 51: cyverse.irodsfs.daemon.v1.MountService.ListMounts:output_type -> cyverse.irodsfs.daemon.v1.ListMountsResponse
+	24, // 52: cyverse.irodsfs.daemon.v1.MountService.GetMount:output_type -> cyverse.irodsfs.daemon.v1.GetMountResponse
+	26, // 53: cyverse.irodsfs.daemon.v1.MountService.WatchMountEvents:output_type -> cyverse.irodsfs.daemon.v1.MountEvent
+	28, // 54: cyverse.irodsfs.daemon.v1.MountService.Ready:output_type -> cyverse.irodsfs.daemon.v1.ReadyResponse
 	49, // [49:55] is the sub-list for method output_type
 	43, // [43:49] is the sub-list for method input_type
 	43, // [43:43] is the sub-list for extension type_name
@@ -2584,44 +2584,44 @@ var file_service_api_api_proto_depIdxs = []int32{
 	0,  // [0:43] is the sub-list for field type_name
 }
 
-func init() { file_service_api_api_proto_init() }
-func file_service_api_api_proto_init() {
-	if File_service_api_api_proto != nil {
+func init() { file_service_api_daemon_proto_init() }
+func file_service_api_daemon_proto_init() {
+	if File_service_api_daemon_proto != nil {
 		return
 	}
-	file_service_api_api_proto_msgTypes[0].OneofWrappers = []any{}
-	file_service_api_api_proto_msgTypes[2].OneofWrappers = []any{}
-	file_service_api_api_proto_msgTypes[3].OneofWrappers = []any{}
-	file_service_api_api_proto_msgTypes[4].OneofWrappers = []any{}
-	file_service_api_api_proto_msgTypes[5].OneofWrappers = []any{}
-	file_service_api_api_proto_msgTypes[6].OneofWrappers = []any{}
-	file_service_api_api_proto_msgTypes[7].OneofWrappers = []any{}
-	file_service_api_api_proto_msgTypes[8].OneofWrappers = []any{}
-	file_service_api_api_proto_msgTypes[9].OneofWrappers = []any{}
-	file_service_api_api_proto_msgTypes[10].OneofWrappers = []any{}
-	file_service_api_api_proto_msgTypes[12].OneofWrappers = []any{
+	file_service_api_daemon_proto_msgTypes[0].OneofWrappers = []any{}
+	file_service_api_daemon_proto_msgTypes[2].OneofWrappers = []any{}
+	file_service_api_daemon_proto_msgTypes[3].OneofWrappers = []any{}
+	file_service_api_daemon_proto_msgTypes[4].OneofWrappers = []any{}
+	file_service_api_daemon_proto_msgTypes[5].OneofWrappers = []any{}
+	file_service_api_daemon_proto_msgTypes[6].OneofWrappers = []any{}
+	file_service_api_daemon_proto_msgTypes[7].OneofWrappers = []any{}
+	file_service_api_daemon_proto_msgTypes[8].OneofWrappers = []any{}
+	file_service_api_daemon_proto_msgTypes[9].OneofWrappers = []any{}
+	file_service_api_daemon_proto_msgTypes[10].OneofWrappers = []any{}
+	file_service_api_daemon_proto_msgTypes[12].OneofWrappers = []any{
 		(*MountConfig_Irodsfs)(nil),
 		(*MountConfig_Davfs)(nil),
 		(*MountConfig_Nfs)(nil),
 	}
-	file_service_api_api_proto_msgTypes[15].OneofWrappers = []any{}
-	file_service_api_api_proto_msgTypes[19].OneofWrappers = []any{}
+	file_service_api_daemon_proto_msgTypes[15].OneofWrappers = []any{}
+	file_service_api_daemon_proto_msgTypes[19].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
-			RawDescriptor: unsafe.Slice(unsafe.StringData(file_service_api_api_proto_rawDesc), len(file_service_api_api_proto_rawDesc)),
+			RawDescriptor: unsafe.Slice(unsafe.StringData(file_service_api_daemon_proto_rawDesc), len(file_service_api_daemon_proto_rawDesc)),
 			NumEnums:      2,
 			NumMessages:   29,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
-		GoTypes:           file_service_api_api_proto_goTypes,
-		DependencyIndexes: file_service_api_api_proto_depIdxs,
-		EnumInfos:         file_service_api_api_proto_enumTypes,
-		MessageInfos:      file_service_api_api_proto_msgTypes,
+		GoTypes:           file_service_api_daemon_proto_goTypes,
+		DependencyIndexes: file_service_api_daemon_proto_depIdxs,
+		EnumInfos:         file_service_api_daemon_proto_enumTypes,
+		MessageInfos:      file_service_api_daemon_proto_msgTypes,
 	}.Build()
-	File_service_api_api_proto = out.File
-	file_service_api_api_proto_goTypes = nil
-	file_service_api_api_proto_depIdxs = nil
+	File_service_api_daemon_proto = out.File
+	file_service_api_daemon_proto_goTypes = nil
+	file_service_api_daemon_proto_depIdxs = nil
 }

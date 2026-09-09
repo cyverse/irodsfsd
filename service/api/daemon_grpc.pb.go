@@ -2,7 +2,7 @@
 // versions:
 // - protoc-gen-go-grpc v1.6.2
 // - protoc             v3.21.12
-// source: service/api/api.proto
+// source: service/api/daemon.proto
 
 package api
 
@@ -19,12 +19,12 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	MountService_Mount_FullMethodName            = "/api.MountService/Mount"
-	MountService_Unmount_FullMethodName          = "/api.MountService/Unmount"
-	MountService_ListMounts_FullMethodName       = "/api.MountService/ListMounts"
-	MountService_GetMount_FullMethodName         = "/api.MountService/GetMount"
-	MountService_WatchMountEvents_FullMethodName = "/api.MountService/WatchMountEvents"
-	MountService_Ready_FullMethodName            = "/api.MountService/Ready"
+	MountService_Mount_FullMethodName            = "/cyverse.irodsfs.daemon.v1.MountService/Mount"
+	MountService_Unmount_FullMethodName          = "/cyverse.irodsfs.daemon.v1.MountService/Unmount"
+	MountService_ListMounts_FullMethodName       = "/cyverse.irodsfs.daemon.v1.MountService/ListMounts"
+	MountService_GetMount_FullMethodName         = "/cyverse.irodsfs.daemon.v1.MountService/GetMount"
+	MountService_WatchMountEvents_FullMethodName = "/cyverse.irodsfs.daemon.v1.MountService/WatchMountEvents"
+	MountService_Ready_FullMethodName            = "/cyverse.irodsfs.daemon.v1.MountService/Ready"
 )
 
 // MountServiceClient is the client API for MountService service.
@@ -286,7 +286,7 @@ func _MountService_Ready_Handler(srv interface{}, ctx context.Context, dec func(
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
 var MountService_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "api.MountService",
+	ServiceName: "cyverse.irodsfs.daemon.v1.MountService",
 	HandlerType: (*MountServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
@@ -317,5 +317,5 @@ var MountService_ServiceDesc = grpc.ServiceDesc{
 			ServerStreams: true,
 		},
 	},
-	Metadata: "service/api/api.proto",
+	Metadata: "service/api/daemon.proto",
 }
