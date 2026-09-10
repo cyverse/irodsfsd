@@ -2061,6 +2061,62 @@ func newTestManagerForPathValidation(t *testing.T, tempDir string, allowedRoots 
 	return manager
 }
 
+func writeFakeExecutable(t *testing.T, path string) {
+	t.Helper()
+	if err := os.WriteFile(path, []byte("#!/bin/sh\nexit 0\n"), 0o700); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestResolveExecutablePathKeepsExplicitNonDefaultPathEvenIfMissing(t *testing.T) {
+	tempDir := t.TempDir()
+	defaultPath := filepath.Join(tempDir, "default-irodsfs")
+	explicitPath := filepath.Join(tempDir, "custom-irodsfs")
+	fallback := filepath.Join(tempDir, "fallback-irodsfs")
+	writeFakeExecutable(t, fallback)
+
+	got := resolveExecutablePath(explicitPath, defaultPath, []string{fallback})
+	if got != explicitPath {
+		t.Fatalf("resolveExecutablePath() = %q, want the explicit path %q left unchanged", got, explicitPath)
+	}
+}
+
+func TestResolveExecutablePathKeepsDefaultPathWhenItExists(t *testing.T) {
+	tempDir := t.TempDir()
+	defaultPath := filepath.Join(tempDir, "default-irodsfs")
+	fallback := filepath.Join(tempDir, "fallback-irodsfs")
+	writeFakeExecutable(t, defaultPath)
+	writeFakeExecutable(t, fallback)
+
+	got := resolveExecutablePath(defaultPath, defaultPath, []string{fallback})
+	if got != defaultPath {
+		t.Fatalf("resolveExecutablePath() = %q, want the existing default path %q", got, defaultPath)
+	}
+}
+
+func TestResolveExecutablePathFallsBackWhenDefaultPathIsMissing(t *testing.T) {
+	tempDir := t.TempDir()
+	defaultPath := filepath.Join(tempDir, "default-irodsfs")
+	fallback := filepath.Join(tempDir, "fallback-irodsfs")
+	writeFakeExecutable(t, fallback)
+
+	got := resolveExecutablePath(defaultPath, defaultPath, []string{fallback})
+	if got != fallback {
+		t.Fatalf("resolveExecutablePath() = %q, want the fallback path %q", got, fallback)
+	}
+}
+
+func TestResolveExecutablePathReturnsDefaultWhenNoCandidateExists(t *testing.T) {
+	tempDir := t.TempDir()
+	defaultPath := filepath.Join(tempDir, "default-irodsfs")
+	fallback := filepath.Join(tempDir, "fallback-irodsfs")
+
+	got := resolveExecutablePath(defaultPath, defaultPath, []string{fallback})
+	if got != defaultPath {
+		t.Fatalf("resolveExecutablePath() = %q, want the default path %q returned so validateExecutable reports it in the error", got, defaultPath)
+	}
+}
+
 func TestValidateMountIDRejectsDot(t *testing.T) {
 	for _, mountID := range []string{".", "..", "a.b.c", "my.pvc.name", "...", "..foo", "foo.."} {
 		if err := validateMountID(mountID); err == nil {

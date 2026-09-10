@@ -54,9 +54,14 @@ curl -fsSL https://raw.githubusercontent.com/cyverse/irodsfsd/main/install.sh | 
 The installer downloads the matching GitHub Release archive, installs the
 systemd service, generates `recovery_encryption_key` when it is empty, and
 enables and starts `irodsfsd`. It preserves an existing
-`/etc/irodsfsd/config.yaml` during reinstalls. Install `irodsfs` separately
-and set `irodsfs_executable_path` in that configuration if it is not at
-`/usr/local/bin/irodsfs`.
+`/etc/irodsfsd/config.yaml` during reinstalls. Install `irodsfs` separately.
+If `irodsfs_executable_path` is left at its default
+(`/usr/local/bin/irodsfs`) and nothing exists there, `irodsfsd` also checks
+`/usr/bin/irodsfs` - where [`irodsfs`'s own
+installer](https://github.com/cyverse/irodsfs#install-the-latest-linux-release)
+places it - so installing `irodsfs` with its default installer just works.
+Set `irodsfs_executable_path` explicitly only if `irodsfs` lives somewhere
+else.
 
 ## Building
 

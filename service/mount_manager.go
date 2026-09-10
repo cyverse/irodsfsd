@@ -190,6 +190,7 @@ func newMountManager(config *irodsfsd_commons.Config, fuse fuseController, probe
 	if err := fuse.Check(true); err != nil {
 		return nil, errors.Wrap(err, "FUSE is unavailable")
 	}
+	config.IRODSFSExecutablePath = resolveIRODSFSExecutablePath(config.IRODSFSExecutablePath)
 	if err := validateExecutable(config.IRODSFSExecutablePath); err != nil {
 		return nil, err
 	}
@@ -1786,6 +1787,32 @@ func validateExecutable(path string) error {
 		return errors.Errorf("irodsfs executable %q is not executable", path)
 	}
 	return nil
+}
+
+func isExecutableFile(path string) bool {
+	info, err := os.Stat(path)
+	return err == nil && !info.IsDir() && info.Mode().Perm()&0o111 != 0
+}
+
+// resolveIRODSFSExecutablePath returns path unchanged unless it is still
+// irodsfsd_commons.IRODSFSExecutablePathDefault and that path doesn't exist,
+// in which case it tries irodsfsd_commons.IRODSFSExecutablePathFallbacks in
+// order and returns the first one found to be an executable file. An
+// explicitly configured non-default path is never second-guessed.
+func resolveIRODSFSExecutablePath(path string) string {
+	return resolveExecutablePath(path, irodsfsd_commons.IRODSFSExecutablePathDefault, irodsfsd_commons.IRODSFSExecutablePathFallbacks)
+}
+
+func resolveExecutablePath(path string, defaultPath string, fallbacks []string) string {
+	if path != defaultPath || isExecutableFile(path) {
+		return path
+	}
+	for _, candidate := range fallbacks {
+		if isExecutableFile(candidate) {
+			return candidate
+		}
+	}
+	return path
 }
 
 func processExitMessage(err error) string {

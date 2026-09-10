@@ -30,3 +30,11 @@ const (
 
 	ManagementServicePortDefault int = 13021
 )
+
+// IRODSFSExecutablePathFallbacks lists additional locations searched for the
+// irodsfs binary when IRODSFSExecutablePath is left at IRODSFSExecutablePathDefault
+// and that path doesn't exist. Different ways of installing irodsfs (this
+// project's own installer vs. a distro package) place the binary in
+// different standard locations; an explicitly configured non-default path is
+// never second-guessed this way.
+var IRODSFSExecutablePathFallbacks = []string{"/usr/bin/irodsfs"}
