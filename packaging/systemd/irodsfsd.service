@@ -5,8 +5,8 @@ After=network-online.target nss-lookup.target
 
 [Service]
 Type=forking
-User=irodsfsd
-Group=irodsfsd
+User=root
+Group=root
 
 RuntimeDirectory=irodsfsd
 RuntimeDirectoryMode=0750

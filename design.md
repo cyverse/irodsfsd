@@ -157,9 +157,8 @@ is rejected, and `allow_other` is never applicable to NFS mounts regardless
 of the policy setting. When `true`, the daemon forces `allow_other` onto
 every irodsfs and DAVFS mount's options, regardless of whether the client
 requested it; NFS mounts are left untouched, since NFS is not FUSE. Because
-irodsfsd runs under one service account distinct from the users who access
-the mounted volume, deployments where those users are different local
-accounts than the service account will generally need
+The packaged irodsfsd service runs as root, so non-root local accounts that
+need to access a mounted volume will generally need
 `allow_fuse_allow_other: true`.
 
 `allow_fuse_allow_other` deliberately does NOT also force `default_permissions`.
@@ -178,14 +177,12 @@ the mount. A deployment where the caller's UID/GID *is* authoritative on the
 host may still request `default_permissions` explicitly in its mount
 request; the daemon only ever refrains from adding it automatically.
 
-Enabling `allow_fuse_allow_other` also requires the host's FUSE
-configuration to actually permit it: unless irodsfsd runs as root, the
-kernel FUSE module rejects `allow_other` from a non-root mounter unless
-`user_allow_other` is uncommented in `/etc/fuse.conf`. The daemon checks
+The packaged service runs as root and may use `allow_other` without a FUSE
+configuration change. A manually run non-root daemon instead requires
+`user_allow_other` to be uncommented in `/etc/fuse.conf`. The daemon checks
 this at startup and on every readiness check, and fails fast (rather than
-letting a later individual mount fail with a confusing kernel error) if
-`allow_fuse_allow_other: true` is configured but `user_allow_other` is not
-set.
+letting a later individual mount fail with a confusing kernel error) if a
+non-root daemon enables `allow_fuse_allow_other` without that setting.
 
 ## 6. Mount Model and State Machine
 

@@ -22,7 +22,7 @@ run `sudo ./install.sh`. It installs:
 - `/etc/irodsfsd/config.yaml` — configuration file
 - `/etc/systemd/system/irodsfsd.service` — systemd unit
 
-It creates the `irodsfsd` system user/group and the daemon data directories.
+The service and its daemon data directories are owned by `root`.
 An existing configuration file is preserved, so reinstalling never replaces a
 local recovery key or other local settings. The service is enabled and started
 immediately.

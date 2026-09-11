@@ -16,12 +16,12 @@ allowed_mount_root_paths:
   - /var/lib/kubelet
 
 # Force the FUSE allow_other mount option onto every irodsfs/DAVFS mount
-# (not NFS). Required when the users accessing the mount are different local
-# accounts than the service account irodsfsd runs as. Does NOT also force
+# (not NFS). Required when non-root local accounts need to access a mount
+# created by the root-running daemon. Does NOT also force
 # default_permissions: a caller's UID/GID (e.g. from irods-csi-driver) may be
 # a container-local identity with no host mapping, so kernel-enforced
-# ownership checks against it can't be trusted. Requires user_allow_other in
-# /etc/fuse.conf unless irodsfsd runs as root.
+# ownership checks against it can't be trusted. The packaged service runs as
+# root, which may use allow_other without user_allow_other in /etc/fuse.conf.
 allow_fuse_allow_other: true
 
 # Retry a mount after it was successfully mounted and then crashes.

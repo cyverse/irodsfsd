@@ -4,7 +4,6 @@
 set -euo pipefail
 
 service_name="irodsfsd"
-service_user="irodsfsd"
 install_prefix="/usr/bin"
 config_dir="/etc/irodsfsd"
 unit_dir="/etc/systemd/system"
@@ -38,21 +37,13 @@ if [[ ! -f ${binary_path} || ! -x ${binary_path} ]]; then
     exit 1
 fi
 
-if ! getent group "${service_user}" >/dev/null; then
-    groupadd --system "${service_user}"
-fi
-if ! id -u "${service_user}" >/dev/null 2>&1; then
-    useradd --system --gid "${service_user}" --home-dir "/var/lib/${service_name}" \
-        --shell /usr/sbin/nologin "${service_user}"
-fi
-
 install -d -o root -g root -m 0755 "${install_prefix}" "${unit_dir}"
 install -o root -g root -m 0755 "${binary_path}" "${install_prefix}/${service_name}"
-install -d -o root -g "${service_user}" -m 0750 "${config_dir}"
+install -d -o root -g root -m 0700 "${config_dir}"
 
 config_path="${config_dir}/config.yaml"
 if [[ ! -e ${config_path} ]]; then
-    install -o root -g "${service_user}" -m 0640 \
+    install -o root -g root -m 0600 \
         "${script_dir}/config.yaml" "${config_path}"
 else
     echo "preserving existing configuration: ${config_path}"
@@ -73,7 +64,7 @@ if grep -Eq "^[[:space:]]*recovery_encryption_key:[[:space:]]*(\"\"|'')?[[:space
     echo "generated recovery_encryption_key in ${config_path}; back up this file before replacing the host"
 fi
 
-install -d -o "${service_user}" -g "${service_user}" -m 0750 \
+install -d -o root -g root -m 0700 \
     /var/lib/irodsfsd /var/lib/irodsfsd/mounts
 install -o root -g root -m 0644 "${script_dir}/${service_name}.service" \
     "${unit_dir}/${service_name}.service"
