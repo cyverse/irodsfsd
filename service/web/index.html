@@ -102,6 +102,7 @@
   th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--border); vertical-align: top; }
   th { color: var(--muted); font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: .03em; }
   td.mono, .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 12px; }
+  .mount-path { overflow-wrap: anywhere; word-break: break-word; }
   .badge { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 600; white-space: nowrap; }
   .badge-mounted { background: #1f8a4d22; color: #1f8a4d; }
   .badge-mounting, .badge-pending { background: #b8860b22; color: #b8860b; }
@@ -341,7 +342,7 @@
       row.innerHTML =
         "<td><span class=\"badge " + (STATE_BADGE[mount.state] || "badge-pending") + "\">" + escapeHtml(stateLabel(mount.state)) + "</span></td>" +
         "<td class=\"mono\">" + escapeHtml(mount.mount_id) + "</td>" +
-        "<td class=\"mono\">" + escapeHtml(config.mount_path) + "</td>" +
+        "<td class=\"mono mount-path\">" + escapeHtml(config.mount_path) + "</td>" +
         "<td>" + clientSummary(config) + "</td>" +
         "<td>" + (config.read_only ? "yes" : "no") + "</td>" +
         "<td class=\"mono\">" + (mount.pid ? escapeHtml(mount.pid) : "–") + "</td>" +
@@ -523,9 +524,6 @@
   el("refresh-now").addEventListener("click", loadMounts);
   el("log-refresh").addEventListener("click", loadLogs);
   el("log-close").addEventListener("click", closeLogs);
-  el("log-overlay").addEventListener("click", function (event) {
-    if (event.target === el("log-overlay")) closeLogs();
-  });
 
   updateFormFields();
   loadMounts();

@@ -76,9 +76,8 @@ const fuseConfPath = "/etc/fuse.conf"
 // requests allow_other while the kernel FUSE module rejects it would fail
 // at mount time with a confusing error, so this fails fast at startup (and
 // on every Ready check) instead. A root process may always use allow_other;
-// a non-root process — the expected irodsfsd deployment, since it runs as a
-// dedicated service account distinct from the mount's end users — may only
-// do so once user_allow_other is uncommented in path.
+// a non-root process may only do so once user_allow_other is uncommented in
+// path.
 func checkUserAllowOtherEnabled(path string) error {
 	if os.Geteuid() == 0 {
 		return nil
