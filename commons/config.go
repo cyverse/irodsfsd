@@ -56,7 +56,10 @@ type Config struct {
 	ReconcileInterval      Duration    `yaml:"reconcile_interval,omitempty" json:"reconcile_interval,omitempty"`
 	MaxConcurrentMounts    int         `yaml:"max_concurrent_mounts,omitempty" json:"max_concurrent_mounts,omitempty"`
 
-	ManagementServicePort int `yaml:"management_service_port,omitempty" json:"management_service_port,omitempty"`
+	// ManagementServiceEndpoint is the HTTP address on which the management
+	// REST API listens. A missing scheme is treated as HTTP; an empty value
+	// disables the management REST API.
+	ManagementServiceEndpoint string `yaml:"management_service_endpoint,omitempty" json:"management_service_endpoint,omitempty"`
 
 	Debug         bool   `yaml:"debug,omitempty" json:"debug,omitempty"`
 	LogRootPath   string `yaml:"log_root_path,omitempty" json:"log_root_path,omitempty"`
@@ -89,7 +92,7 @@ func NewDefaultConfig() *Config {
 		ReconcileInterval:   Duration(ReconcileIntervalDefault),
 		MaxConcurrentMounts: MaxConcurrentMountsDefault,
 
-		ManagementServicePort: ManagementServicePortDefault,
+		ManagementServiceEndpoint: ManagementServiceEndpointDefault,
 
 		Debug: false,
 
@@ -378,6 +381,10 @@ func (config *Config) Validate() error {
 		return err
 	}
 
+	if _, err := ParseManagementServiceEndpoint(config.ManagementServiceEndpoint); err != nil {
+		return errors.Wrap(err, "invalid management_service_endpoint")
+	}
+
 	paths := map[string]string{
 		"irodsfs_executable_path": config.IRODSFSExecutablePath,
 		"mount_executable_path":   config.MountExecutablePath,
@@ -447,9 +454,6 @@ func (config *Config) Validate() error {
 	}
 	if config.MaxConcurrentMounts < 1 {
 		return errors.New("max_concurrent_mounts must be at least 1")
-	}
-	if config.ManagementServicePort < 0 || config.ManagementServicePort > 65535 {
-		return errors.New("management_service_port must be between 0 and 65535")
 	}
 
 	return nil

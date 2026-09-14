@@ -102,7 +102,7 @@ Minimal example:
 
 ```yaml
 service_endpoint: "tcp://0.0.0.0:13020"
-management_service_port: 13021
+management_service_endpoint: "http://:13021"
 irodsfs_executable_path: "/usr/local/bin/irodsfs"
 data_root_path: "/var/lib/irodsfsd"
 pid_file: "/run/irodsfsd/irodsfsd.pid"

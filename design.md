@@ -98,7 +98,7 @@ mount JSON loader and REST protobuf decoder reject unknown mount fields.
 
 ```yaml
 service_endpoint: "tcp://0.0.0.0:13020"
-management_service_port: 13021
+management_service_endpoint: "http://:13021"
 irodsfs_executable_path: "/usr/local/bin/irodsfs"
 mount_executable_path: "/usr/bin/mount"
 unmount_executable_path: "/usr/bin/umount"
@@ -366,7 +366,10 @@ Operational procedures cover value-log GC, backup/restore, and disk-full failure
 The canonical contract is the protobuf service `api.MountService` in
 `service/api/api.proto`. The gRPC service is exposed through
 `service_endpoint`, while the REST service uses JSON under `/api/v1` on
-`management_service_port`. Both transports call the same application service and therefore
+`management_service_endpoint`. The endpoint accepts HTTP only; an omitted
+`http://` scheme is added automatically, and its host/IP controls the bind
+address. Set it to an empty string to disable the REST service. Both transports
+call the same application service and therefore
 have identical validation, mount-ID handling, state transitions, and secret-redaction
 rules. Errors have stable machine-readable codes.
 

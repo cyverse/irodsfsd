@@ -2,7 +2,6 @@ package service
 
 import (
 	"context"
-	"fmt"
 	"net"
 	"net/http"
 	"os"
@@ -142,9 +141,13 @@ func (svc *Service) Start() error {
 	if err != nil {
 		return errors.Wrapf(err, "failed to listen on %s endpoint %q", scheme, endpoint)
 	}
+	restEndpoint, err := commons.ParseManagementServiceEndpoint(svc.config.ManagementServiceEndpoint)
+	if err != nil {
+		_ = listener.Close()
+		return err
+	}
 	var restListener net.Listener
-	if svc.config.ManagementServicePort > 0 {
-		restEndpoint := fmt.Sprintf(":%d", svc.config.ManagementServicePort)
+	if restEndpoint != "" {
 		restListener, err = svc.restListen("tcp", restEndpoint)
 		if err != nil {
 			_ = listener.Close()

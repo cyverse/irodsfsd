@@ -11,7 +11,7 @@ import (
 
 func TestParseYAMLOverlaysDefaults(t *testing.T) {
 	data := "service_endpoint: tcp://127.0.0.1:9090\n" +
-		"management_service_port: 14000\n" +
+		"management_service_endpoint: 127.0.0.1:14000\n" +
 		"irodsfs_executable_path: /opt/irodsfs\n" +
 		"debug: true\n" +
 		"mount_timeout: 45s\n" +
@@ -28,8 +28,8 @@ func TestParseYAMLOverlaysDefaults(t *testing.T) {
 	if config.ServiceEndpoint != "tcp://127.0.0.1:9090" {
 		t.Fatalf("ServiceEndpoint = %q", config.ServiceEndpoint)
 	}
-	if config.ManagementServicePort != 14000 {
-		t.Fatalf("ManagementServicePort = %d", config.ManagementServicePort)
+	if config.ManagementServiceEndpoint != "127.0.0.1:14000" {
+		t.Fatalf("ManagementServiceEndpoint = %q", config.ManagementServiceEndpoint)
 	}
 	if config.IRODSFSExecutablePath != "/opt/irodsfs" {
 		t.Fatalf("IRODSFSExecutablePath = %q", config.IRODSFSExecutablePath)
@@ -66,7 +66,7 @@ func TestParseYAMLOverlaysDefaults(t *testing.T) {
 func TestParseJSONOverlaysDefaults(t *testing.T) {
 	data := `{
 		"service_endpoint": "tcp://127.0.0.1:8181",
-		"management_service_port": 14001,
+		"management_service_endpoint": "http://127.0.0.1:14001",
 		"pid_file": "/tmp/irodsfsd.pid",
 		"data_root_path": "/tmp/irodsfsd",
 		"mount_root_path": "/tmp/irodsfsd/mounts"
@@ -78,8 +78,8 @@ func TestParseJSONOverlaysDefaults(t *testing.T) {
 	if config.PIDFile != "/tmp/irodsfsd.pid" {
 		t.Fatalf("PIDFile = %q", config.PIDFile)
 	}
-	if config.ManagementServicePort != 14001 {
-		t.Fatalf("ManagementServicePort = %d", config.ManagementServicePort)
+	if config.ManagementServiceEndpoint != "http://127.0.0.1:14001" {
+		t.Fatalf("ManagementServiceEndpoint = %q", config.ManagementServiceEndpoint)
 	}
 	if config.GetMountRootPath() != "/tmp/irodsfsd/mounts" {
 		t.Fatalf("mount root path = %q", config.GetMountRootPath())
@@ -137,8 +137,8 @@ func TestParsePartialNestedConfigRetainsDefaults(t *testing.T) {
 	if config.MaxConcurrentMounts != 40 {
 		t.Fatalf("MaxConcurrentMounts = %d", config.MaxConcurrentMounts)
 	}
-	if config.ManagementServicePort != ManagementServicePortDefault {
-		t.Fatalf("ManagementServicePort = %d", config.ManagementServicePort)
+	if config.ManagementServiceEndpoint != ManagementServiceEndpointDefault {
+		t.Fatalf("ManagementServiceEndpoint = %q", config.ManagementServiceEndpoint)
 	}
 	if time.Duration(config.DAVFSUnmountTimeout) != 3*time.Minute {
 		t.Fatalf("DAVFSUnmountTimeout = %s", time.Duration(config.DAVFSUnmountTimeout))
@@ -190,10 +190,10 @@ func TestValidateRejectsNonPositiveDAVFSUnmountTimeout(t *testing.T) {
 	}
 }
 
-func TestValidateRejectsInvalidManagementServicePort(t *testing.T) {
+func TestValidateRejectsInvalidManagementServiceEndpoint(t *testing.T) {
 	config := newValidConfig()
-	config.ManagementServicePort = 65536
-	if err := config.Validate(); err == nil || !strings.Contains(err.Error(), "management_service_port must be between 0 and 65535") {
+	config.ManagementServiceEndpoint = "https://127.0.0.1:13021"
+	if err := config.Validate(); err == nil || !strings.Contains(err.Error(), "invalid management_service_endpoint") {
 		t.Fatalf("Validate error = %v", err)
 	}
 }

@@ -116,7 +116,7 @@ func TestRESTHealthEndpoints(t *testing.T) {
 func TestServiceStartsRESTAndGRPCListeners(t *testing.T) {
 	config := commons.NewDefaultConfig()
 	config.ServiceEndpoint = "tcp://127.0.0.1:13020"
-	config.ManagementServicePort = 13021
+	config.ManagementServiceEndpoint = "127.0.0.1:13021"
 	svc, err := newService(config, newFakeMountOperations())
 	if err != nil {
 		t.Fatal(err)
@@ -125,7 +125,7 @@ func TestServiceStartsRESTAndGRPCListeners(t *testing.T) {
 	restListener := bufconn.Listen(1024 * 1024)
 	svc.listen = func(string, string) (net.Listener, error) { return grpcListener, nil }
 	svc.restListen = func(network string, address string) (net.Listener, error) {
-		if network != "tcp" || address != ":13021" {
+		if network != "tcp" || address != "127.0.0.1:13021" {
 			t.Fatalf("REST listen = %s %s", network, address)
 		}
 		return restListener, nil

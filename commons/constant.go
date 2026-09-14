@@ -28,7 +28,7 @@ const (
 
 	RecoveryEncryptionKeySizeDefault int = 32
 
-	ManagementServicePortDefault int = 13021
+	ManagementServiceEndpointDefault string = "http://0.0.0.0:13021"
 )
 
 // IRODSFSExecutablePathFallbacks lists additional locations searched for the
