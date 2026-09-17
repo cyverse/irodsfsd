@@ -38,6 +38,6 @@ jobs:
           install -m 0640 packaging/systemd/config.yaml "${stage_dir}/config.yaml"
           install -m 0644 packaging/systemd/irodsfsd.service "${stage_dir}/irodsfsd.service"
           tar -C "${stage_dir}" -czf "dist/${asset_name}.tar.gz" .
-      - uses: softprops/action-gh-release@v2
+      - uses: softprops/action-gh-release@v3
         with:
           files: dist/*.tar.gz
