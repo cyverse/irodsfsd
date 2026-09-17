@@ -51,17 +51,23 @@ Install the latest release for the current Linux architecture with:
 curl -fsSL https://raw.githubusercontent.com/cyverse/irodsfsd/main/install.sh | bash
 ```
 
-The installer downloads the matching GitHub Release archive, installs the
-systemd service, generates `recovery_encryption_key` when it is empty, and
-enables and starts `irodsfsd`. It preserves an existing
-`/etc/irodsfsd/config.yaml` during reinstalls. Install `irodsfs` separately.
+The installer first installs the latest [`irodsfs`](https://github.com/cyverse/irodsfs)
+release with its own installer, then downloads the matching `irodsfsd` GitHub
+Release archive, installs the systemd service, generates
+`recovery_encryption_key` when it is empty, and enables and starts `irodsfsd`.
+It preserves an existing `/etc/irodsfsd/config.yaml` during reinstalls.
+
+To keep an existing `irodsfs` installation as is, skip that step:
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/cyverse/irodsfsd/main/install.sh | IRODSFSD_SKIP_IRODSFS=1 bash
+```
+
 If `irodsfs_executable_path` is left at its default
 (`/usr/local/bin/irodsfs`) and nothing exists there, `irodsfsd` also checks
-`/usr/bin/irodsfs` - where [`irodsfs`'s own
-installer](https://github.com/cyverse/irodsfs#install-the-latest-linux-release)
-places it - so installing `irodsfs` with its default installer just works.
-Set `irodsfs_executable_path` explicitly only if `irodsfs` lives somewhere
-else.
+`/usr/bin/irodsfs` - where `irodsfs`'s own installer places it - so the
+bundled installation just works. Set `irodsfs_executable_path` explicitly
+only if `irodsfs` lives somewhere else.
 
 ## Building
 
