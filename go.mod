@@ -1,20 +1,20 @@
 module github.com/cyverse/irodsfsd
 
-go 1.25.0
+go 1.25.9
 
 require (
 	github.com/cockroachdb/errors v1.14.0
 	github.com/cyverse/go-daemonizer v0.2.0
 	github.com/cyverse/go-irodsclient v0.21.2
-	github.com/cyverse/irodsfs v0.13.0
-	github.com/cyverse/irodsfs-common v0.0.0-20260904153238-dd85f20bbbc3
+	github.com/cyverse/irodsfs v0.13.2
+	github.com/cyverse/irodsfs-common v0.0.0-20260917200332-d18bcfa8f65d
 	github.com/dgraph-io/badger/v3 v3.2103.5
 	github.com/prometheus/client_golang v1.24.1
 	github.com/rs/xid v1.3.0
 	github.com/sirupsen/logrus v1.10.2
-	github.com/spf13/cobra v1.10.1
-	google.golang.org/grpc v1.81.0
-	google.golang.org/protobuf v1.36.11
+	github.com/spf13/cobra v1.10.2
+	google.golang.org/grpc v1.83.1
+	google.golang.org/protobuf v1.36.12
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1
 	gopkg.in/yaml.v3 v3.0.1
 )
@@ -32,9 +32,9 @@ require (
 	github.com/evanphx/json-patch v5.9.11+incompatible // indirect
 	github.com/getsentry/sentry-go v0.46.0 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
-	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
+	github.com/golang/groupcache v0.0.0-20241129210726-2c02b8208cf8 // indirect
 	github.com/golang/protobuf v1.5.4 // indirect
-	github.com/golang/snappy v0.0.4 // indirect
+	github.com/golang/snappy v1.0.0 // indirect
 	github.com/google/flatbuffers v1.12.1 // indirect
 	github.com/hashicorp/go-rootcerts v1.0.2 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
@@ -61,6 +61,6 @@ require (
 	golang.org/x/sys v0.47.0 // indirect
 	golang.org/x/term v0.45.0 // indirect
 	golang.org/x/text v0.40.0 // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20260226221140-a57be14db171 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20260904194346-d0f1323225a4 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 )
