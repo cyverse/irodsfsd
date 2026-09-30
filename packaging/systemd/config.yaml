@@ -14,6 +14,7 @@ recovery_encryption_key: ""
 allowed_mount_root_paths:
   - /mnt/irods
   - /var/lib/kubelet
+  - /var/lib/k0s/kubelet
 
 # Force the FUSE allow_other mount option onto every irodsfs/DAVFS mount
 # (not NFS). Required when non-root local accounts need to access a mount
