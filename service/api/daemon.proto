@@ -60,8 +60,9 @@ message ConnectionConfig {
   optional google.protobuf.Duration idle_timeout = 6;
   optional google.protobuf.Duration operation_timeout = 7;
   optional google.protobuf.Duration long_operation_timeout = 8;
-  optional int32 tcp_buffer_size = 9;
-  optional bool wait_connection = 10;
+  optional int32 tcp_send_buffer_size = 9;
+  optional int32 tcp_recv_buffer_size = 10;
+  optional bool wait_connection = 11;
 }
 
 message MetadataCacheTimeoutSetting {

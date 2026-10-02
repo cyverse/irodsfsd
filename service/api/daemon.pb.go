@@ -504,8 +504,9 @@ type ConnectionConfig struct {
 	IdleTimeout          *durationpb.Duration   `protobuf:"bytes,6,opt,name=idle_timeout,json=idleTimeout,proto3,oneof" json:"idle_timeout,omitempty"`
 	OperationTimeout     *durationpb.Duration   `protobuf:"bytes,7,opt,name=operation_timeout,json=operationTimeout,proto3,oneof" json:"operation_timeout,omitempty"`
 	LongOperationTimeout *durationpb.Duration   `protobuf:"bytes,8,opt,name=long_operation_timeout,json=longOperationTimeout,proto3,oneof" json:"long_operation_timeout,omitempty"`
-	TcpBufferSize        *int32                 `protobuf:"varint,9,opt,name=tcp_buffer_size,json=tcpBufferSize,proto3,oneof" json:"tcp_buffer_size,omitempty"`
-	WaitConnection       *bool                  `protobuf:"varint,10,opt,name=wait_connection,json=waitConnection,proto3,oneof" json:"wait_connection,omitempty"`
+	TcpSendBufferSize    *int32                 `protobuf:"varint,9,opt,name=tcp_send_buffer_size,json=tcpSendBufferSize,proto3,oneof" json:"tcp_send_buffer_size,omitempty"`
+	TcpRecvBufferSize    *int32                 `protobuf:"varint,10,opt,name=tcp_recv_buffer_size,json=tcpRecvBufferSize,proto3,oneof" json:"tcp_recv_buffer_size,omitempty"`
+	WaitConnection       *bool                  `protobuf:"varint,11,opt,name=wait_connection,json=waitConnection,proto3,oneof" json:"wait_connection,omitempty"`
 	unknownFields        protoimpl.UnknownFields
 	sizeCache            protoimpl.SizeCache
 }
@@ -596,9 +597,16 @@ func (x *ConnectionConfig) GetLongOperationTimeout() *durationpb.Duration {
 	return nil
 }
 
-func (x *ConnectionConfig) GetTcpBufferSize() int32 {
-	if x != nil && x.TcpBufferSize != nil {
-		return *x.TcpBufferSize
+func (x *ConnectionConfig) GetTcpSendBufferSize() int32 {
+	if x != nil && x.TcpSendBufferSize != nil {
+		return *x.TcpSendBufferSize
+	}
+	return 0
+}
+
+func (x *ConnectionConfig) GetTcpRecvBufferSize() int32 {
+	if x != nil && x.TcpRecvBufferSize != nil {
+		return *x.TcpRecvBufferSize
 	}
 	return 0
 }
@@ -2253,7 +2261,7 @@ const file_service_api_daemon_proto_rawDesc = "" +
 	"\tread_only\x18\x04 \x01(\bR\breadOnly\x12\x1d\n" +
 	"\n" +
 	"create_dir\x18\x05 \x01(\bR\tcreateDir\x123\n" +
-	"\x16ignore_not_exist_error\x18\x06 \x01(\bR\x13ignoreNotExistError\"\x90\x06\n" +
+	"\x16ignore_not_exist_error\x18\x06 \x01(\bR\x13ignoreNotExistError\"\xed\x06\n" +
 	"\x10ConnectionConfig\x12I\n" +
 	"\x10creation_timeout\x18\x01 \x01(\v2\x19.google.protobuf.DurationH\x00R\x0fcreationTimeout\x88\x01\x01\x12$\n" +
 	"\vinit_number\x18\x02 \x01(\x05H\x01R\n" +
@@ -2264,10 +2272,12 @@ const file_service_api_daemon_proto_rawDesc = "" +
 	"\blifespan\x18\x05 \x01(\v2\x19.google.protobuf.DurationH\x04R\blifespan\x88\x01\x01\x12A\n" +
 	"\fidle_timeout\x18\x06 \x01(\v2\x19.google.protobuf.DurationH\x05R\vidleTimeout\x88\x01\x01\x12K\n" +
 	"\x11operation_timeout\x18\a \x01(\v2\x19.google.protobuf.DurationH\x06R\x10operationTimeout\x88\x01\x01\x12T\n" +
-	"\x16long_operation_timeout\x18\b \x01(\v2\x19.google.protobuf.DurationH\aR\x14longOperationTimeout\x88\x01\x01\x12+\n" +
-	"\x0ftcp_buffer_size\x18\t \x01(\x05H\bR\rtcpBufferSize\x88\x01\x01\x12,\n" +
-	"\x0fwait_connection\x18\n" +
-	" \x01(\bH\tR\x0ewaitConnection\x88\x01\x01B\x13\n" +
+	"\x16long_operation_timeout\x18\b \x01(\v2\x19.google.protobuf.DurationH\aR\x14longOperationTimeout\x88\x01\x01\x124\n" +
+	"\x14tcp_send_buffer_size\x18\t \x01(\x05H\bR\x11tcpSendBufferSize\x88\x01\x01\x124\n" +
+	"\x14tcp_recv_buffer_size\x18\n" +
+	" \x01(\x05H\tR\x11tcpRecvBufferSize\x88\x01\x01\x12,\n" +
+	"\x0fwait_connection\x18\v \x01(\bH\n" +
+	"R\x0ewaitConnection\x88\x01\x01B\x13\n" +
 	"\x11_creation_timeoutB\x0e\n" +
 	"\f_init_numberB\r\n" +
 	"\v_max_numberB\x12\n" +
@@ -2275,8 +2285,9 @@ const file_service_api_daemon_proto_rawDesc = "" +
 	"\t_lifespanB\x0f\n" +
 	"\r_idle_timeoutB\x14\n" +
 	"\x12_operation_timeoutB\x19\n" +
-	"\x17_long_operation_timeoutB\x12\n" +
-	"\x10_tcp_buffer_sizeB\x12\n" +
+	"\x17_long_operation_timeoutB\x17\n" +
+	"\x15_tcp_send_buffer_sizeB\x17\n" +
+	"\x15_tcp_recv_buffer_sizeB\x12\n" +
 	"\x10_wait_connection\"\x91\x01\n" +
 	"\x1bMetadataCacheTimeoutSetting\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x123\n" +

@@ -231,8 +231,11 @@ func applyConnectionConfig(target *irodsclient_fs.ConnectionConfig, source *api.
 		}
 		target.LongOperationTimeout = irodsclient_types.Duration(duration)
 	}
-	if source.TcpBufferSize != nil {
-		target.TcpBufferSize = int(source.GetTcpBufferSize())
+	if source.TcpSendBufferSize != nil {
+		target.TcpSendBufferSize = int(source.GetTcpSendBufferSize())
+	}
+	if source.TcpRecvBufferSize != nil {
+		target.TcpRecvBufferSize = int(source.GetTcpRecvBufferSize())
 	}
 	if source.WaitConnection != nil {
 		target.WaitConnection = source.GetWaitConnection()
