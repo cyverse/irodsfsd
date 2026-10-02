@@ -5,9 +5,9 @@ go 1.25.9
 require (
 	github.com/cockroachdb/errors v1.14.0
 	github.com/cyverse/go-daemonizer v0.2.0
-	github.com/cyverse/go-irodsclient v0.21.2
-	github.com/cyverse/irodsfs v0.13.3
-	github.com/cyverse/irodsfs-common v0.0.0-20260923220717-827291d1d76a
+	github.com/cyverse/go-irodsclient v0.21.4
+	github.com/cyverse/irodsfs v0.13.4
+	github.com/cyverse/irodsfs-common v0.0.0-20261002202552-0aba07aeeee2
 	github.com/dgraph-io/badger/v3 v3.2103.5
 	github.com/prometheus/client_golang v1.24.1
 	github.com/rs/xid v1.3.0
