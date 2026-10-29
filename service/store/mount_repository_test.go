@@ -247,3 +247,19 @@ func TestRecordsPersistAcrossReopen(t *testing.T) {
 		t.Error("password did not survive closing and reopening the database")
 	}
 }
+
+func TestDecodeRecordIgnoresRemovedFields(t *testing.T) {
+	data := []byte(`{"schema_version":1,"tombstone":false,"info":{"mountId":"mount-1",` +
+		`"config":{"mountPath":"/mnt/irods/alice","irodsfs":{"metadataConnection":{"tcpBufferSize":4096,"maxNumber":3}}}}}`)
+
+	record, err := decodeRecord(data)
+	if err != nil {
+		t.Fatalf("decodeRecord() error = %v", err)
+	}
+	if got := record.Info.GetMountId(); got != "mount-1" {
+		t.Errorf("mount id = %q, want %q", got, "mount-1")
+	}
+	if got := record.Info.GetConfig().GetIrodsfs().GetMetadataConnection().GetMaxNumber(); got != 3 {
+		t.Errorf("max number = %d, want 3", got)
+	}
+}

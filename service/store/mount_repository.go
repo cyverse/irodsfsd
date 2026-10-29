@@ -302,8 +302,10 @@ func decodeRecord(data []byte) (*MountRecord, error) {
 	if err := json.Unmarshal(data, &stored); err != nil {
 		return nil, errors.Wrap(err, "failed to unmarshal mount record")
 	}
+	// fields removed from the .proto file may remain in records written by
+	// older versions; dropping them keeps those mounts restorable
 	info := &api.MountInfo{}
-	if err := protojson.Unmarshal(stored.Info, info); err != nil {
+	if err := (protojson.UnmarshalOptions{DiscardUnknown: true}).Unmarshal(stored.Info, info); err != nil {
 		return nil, errors.Wrap(err, "failed to unmarshal mount record")
 	}
 	return &MountRecord{Info: info, Tombstone: stored.Tombstone}, nil
